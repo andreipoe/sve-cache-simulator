@@ -1,0 +1,45 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "make clang",
+			"command": "make",
+			"args": [
+				"COMPILER=CLANG"
+			],
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build"
+		},
+		{
+			"type": "shell",
+			"label": "make gcc",
+			"command": "make",
+			"args": [
+				"COMPILER=GNU"
+			],
+			"osx": {
+				"args": [
+					"COMPILER=GNU",
+					"CXX_GNU=g++-9"
+				]
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build"
+		},
+		{
+			"type": "shell",
+			"label": "make clean",
+			"command": "make",
+			"args": [
+				"clean"
+			],
+			"group": "build",
+			"problemMatcher": []
+		}
+	]
+}
