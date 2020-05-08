@@ -6,7 +6,7 @@
 #include <sstream>
 #include <string>
 
-#include "InfiniteCache.hh"
+#include "DirectMappedCache.hh"
 
 int main(int argc, char* argv[]) {
   if (argc < 2) {
@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
 
   size_t count = 0;
   std::map<int, size_t> addresses;
-  InfiniteCache cache;
+  DirectMappedCache cache;
 
   std::ifstream trace(argv[1]);
   for (std::string line; std::getline(trace, line);) {

@@ -17,3 +17,7 @@ const CacheEvent InfiniteCache::touch(long address) {
   addresses.insert(address);
   return event;
 }
+
+// const CacheAddress InfiniteCache::split_address(long address) const {
+//   Cache::split_address(address);
+// }

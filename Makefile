@@ -75,4 +75,4 @@ $(TARGET): $(OBJ)
 	$(CXX) -std=c++17 $(CXXFLAGS) -c $^
 
 clean:
-	rm -f $(TARGET) *.o
+	rm -f $(TARGET) *.o *.gch
