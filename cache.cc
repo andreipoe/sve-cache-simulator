@@ -3,7 +3,7 @@
 Cache::Cache() {}
 Cache::~Cache() {}
 
-void Cache::touch(std::vector<long> addresses) {
+void Cache::touch(const std::vector<long> addresses) {
   for (auto const& a : addresses)
     touch(a);
 }
@@ -14,7 +14,7 @@ const long Cache::getMisses() const { return misses; }
 
 const long Cache::getTotalAccesses() const { return hits + misses; }
 
-const CacheAddress Cache::split_address(long address) const {
+const CacheAddress Cache::split_address(const long address) const {
   throw NotImplementedException();
 }
 

@@ -26,16 +26,16 @@ class Cache {
 
   Cache();
 
-  virtual const CacheAddress split_address(long address) const;
+  virtual const CacheAddress split_address(const long address) const;
 
  public:
   virtual ~Cache();
 
   /* Run a single address through the cache */
-  virtual const CacheEvent touch(long address) = 0;
+  virtual const CacheEvent touch(const long address) = 0;
 
   /* Run a sequence of addresses through the cache */
-  virtual void touch(std::vector<long> addresses);
+  void touch(const std::vector<long> addresses);
 
   const long getHits() const;
   const long getMisses() const;
