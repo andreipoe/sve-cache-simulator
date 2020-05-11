@@ -3,3 +3,10 @@ BasedOnStyle: Google
 DerivePointerAlignment: false
 PointerAlignment: true
 Standard: C++11
+
+ColumnLimit: 90
+AllowShortLoopsOnASingleLine: false
+IncludeBlocks: "Preserve"
+# SpaceInEmptyBlock: true
+
+# vim: ft=yaml

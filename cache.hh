@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <vector>
 
 enum class CacheEvent { Hit, Miss };
 
@@ -30,7 +31,11 @@ class Cache {
  public:
   virtual ~Cache();
 
+  /* Run a single address through the cache */
   virtual const CacheEvent touch(long address) = 0;
+
+  /* Run a sequence of addresses through the cache */
+  virtual void touch(std::vector<long> addresses);
 
   const long getHits() const;
   const long getMisses() const;
