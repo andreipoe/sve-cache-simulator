@@ -4,9 +4,12 @@ DerivePointerAlignment: false
 PointerAlignment: true
 Standard: C++11
 
-ColumnLimit: 90
 AllowShortLoopsOnASingleLine: false
+ColumnLimit: 90
+Cpp11BracedListStyle: false
 IncludeBlocks: "Preserve"
+SpaceBeforeCpp11BracedList: true
+SpaceBeforeParens: "ControlStatements"
 # SpaceInEmptyBlock: true
 
 # vim: ft=yaml

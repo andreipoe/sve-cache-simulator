@@ -1,16 +1,15 @@
 image: ubuntu:20.04
 
-stages:
-  - build
-
-build_gnu:
-  stage: build
+gcc:
   script:
     - apt-get -qq update && apt-get -qq install -y make g++
     - make -j COMPILER=GNU
+    - make -j COMPILER=GNU test
+    - ./test/scs-test
 
-build_clang:
-  stage: build
+clang:
   script:
     - apt-get -qq update && apt-get -qq install -y make clang
     - make -j COMPILER=CLANG
+    - make -j COMPILER=CLANG test
+    - ./test/scs-test

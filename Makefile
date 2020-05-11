@@ -10,6 +10,8 @@ SHELL := bash
 
 MAKEFLAGS += --warn-undefined-variables --no-builtin-rules
 
+export
+
 # -------
 
 MACHINE = $(shell uname -m)
@@ -61,18 +63,23 @@ LDFLAGS = $(LDFLAGS_$(COMPILER))
 TARGET := scs
 SRC := $(wildcard *.cc)
 OBJ := $(patsubst %.cc,%.o,$(SRC))
-HDR := $(patsubst %.cc,%.hh,$(SRC))
-# OBJ := $(addsuffix .o,$(basename $(SRC)))
+# HDR := $(patsubst %.cc,%.hh,$(SRC))
 
-.PHONY: all clean
+
+.PHONY: all test clean
 
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
 	$(CXX) $(LDFLAGS) -o $@ $^
 
+test: $(OBJ)
+	$(MAKE) -C test
+
+
 %.o: %.cc
 	$(CXX) -std=c++17 $(CXXFLAGS) -c $^
 
 clean:
 	rm -f $(TARGET) *.o *.gch
+	$(MAKE) -C test clean
