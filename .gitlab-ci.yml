@@ -1,0 +1,16 @@
+image: ubuntu:20.04
+
+stages:
+  - build
+
+build_gnu:
+  stage: build
+  script:
+    - apt-get -qq update && apt-get -qq install -y make g++
+    - make -j COMPILER=GNU
+
+build_clang:
+  stage: build
+  script:
+    - apt-get -qq update && apt-get -qq install -y make clang
+    - make -j COMPILER=CLANG
