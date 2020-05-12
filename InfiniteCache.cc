@@ -1,6 +1,6 @@
 #include "InfiniteCache.hh"
 
-InfiniteCache::InfiniteCache() {}
+InfiniteCache::InfiniteCache() : Cache(0, 0) {}
 
 const CacheEvent InfiniteCache::touch(long address) {
   auto cached_element = addresses.find(address);
@@ -17,7 +17,3 @@ const CacheEvent InfiniteCache::touch(long address) {
   addresses.insert(address);
   return event;
 }
-
-// const CacheAddress InfiniteCache::split_address(long address) const {
-//   Cache::split_address(address);
-// }

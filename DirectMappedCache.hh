@@ -11,7 +11,7 @@ class DirectMappedCache : public Cache {
   virtual const CacheAddress split_address(long address) const override;
 
  public:
-  DirectMappedCache();
+  DirectMappedCache(CacheConfig config);
 
   using Cache::touch;
   virtual const CacheEvent touch(long address) override;

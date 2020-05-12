@@ -5,8 +5,8 @@ const int cache_size = 32 * 1024;  // 32 KB
 const int block_size = 6;          // 64-byte cache lines
 const int index_size = 9;
 
-DirectMappedCache::DirectMappedCache() {
-  cache_lines = std::vector<CacheEntry>(cache_size / block_size, {0, false});
+DirectMappedCache::DirectMappedCache(CacheConfig config) : Cache(config) {
+  cache_lines.resize(cache_size / block_size, { 0, false });
 }
 
 const CacheAddress DirectMappedCache::split_address(long address) const {
@@ -14,7 +14,7 @@ const CacheAddress DirectMappedCache::split_address(long address) const {
   int index = (address >> block_size) & ((1 << index_size) - 1);
   long tag = address >> (block_size + index_size);
 
-  return {tag, index, block};
+  return { tag, index, block };
 }
 
 const CacheEvent DirectMappedCache::touch(long address) {
@@ -32,7 +32,7 @@ const CacheEvent DirectMappedCache::touch(long address) {
     event = CacheEvent::Miss;
   }
 
-  cache_lines[cl_index] = {address_split.tag, true};
+  cache_lines[cl_index] = { address_split.tag, true };
 
   return event;
 }

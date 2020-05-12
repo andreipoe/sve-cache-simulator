@@ -2,14 +2,14 @@ image: ubuntu:20.04
 
 gcc:
   script:
-    - apt-get -qq update && apt-get -qq install -y make g++
+    - apt-get -qq update && apt-get -qq install -y make g++ >/dev/null 2>&1
     - make -j COMPILER=GNU
     - make -j COMPILER=GNU test
     - ./test/scs-test
 
 clang:
   script:
-    - apt-get -qq update && apt-get -qq install -y make clang
+    - apt-get -qq update && apt-get -qq install -y make clang >/dev/null 2>&1
     - make -j COMPILER=CLANG
     - make -j COMPILER=CLANG test
     - ./test/scs-test

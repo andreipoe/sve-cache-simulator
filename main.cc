@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 
+#include "CacheConfig.hh"
 #include "DirectMappedCache.hh"
 #include "InfiniteCache.hh"
 #include "MemoryTrace.hh"
@@ -45,7 +46,8 @@ int main(int argc, char* argv[]) {
 
   std::cout << "--------------\n";
 
-  DirectMappedCache direct_mapped_cache;
+  CacheConfig config(std::ifstream("configs/32KB.ini"));
+  DirectMappedCache direct_mapped_cache(config);
   std::cout << "Using a direct-mapped cache.\n";
   run_and_print_stats(trace, direct_mapped_cache);
 

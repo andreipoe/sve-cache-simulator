@@ -48,6 +48,9 @@ CXXFLAGS_GNU = -$(ARCHFLAG)=$(ARCH) -Ofast
 CXXFLAGS_INTEL = -Ofast -x$(ARCH)
 
 CXXFLAGS = -Wall $(CXXFLAGS_$(COMPILER))
+ifeq ($(DEBUG), 1)
+CXXFLAGS += -g -O0
+endif
 
 LDFLAGS_ARM = -flto
 LDFLAGS_CLANG = -flto
