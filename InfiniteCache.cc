@@ -2,7 +2,7 @@
 
 InfiniteCache::InfiniteCache() : Cache(0, 0) {}
 
-const CacheEvent InfiniteCache::touch(long address) {
+const CacheEvent InfiniteCache::touch(const long address) {
   auto cached_element = addresses.find(address);
   CacheEvent event;
 

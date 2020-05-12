@@ -8,14 +8,8 @@ struct MemoryRequest {
   bool is_bundle, is_write;
   long address, pc;
 
-  explicit MemoryRequest(int tid, int size, bool is_bundle, bool is_write, long address,
-                         long pc)
-      : tid(tid),
-        size(size),
-        is_bundle(is_bundle),
-        is_write(is_write),
-        address(address),
-        pc(pc) {}
+  explicit MemoryRequest(const int tid, const int size, const bool is_bundle,
+                         const bool is_write, const long address, const long pc);
 };
 
 /* Represents an ArmIE memory trace */

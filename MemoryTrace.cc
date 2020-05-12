@@ -5,6 +5,15 @@
 
 #include "MemoryTrace.hh"
 
+MemoryRequest::MemoryRequest(const int tid, const int size, const bool is_bundle,
+                             const bool is_write, const long address, const long pc)
+    : tid(tid),
+      size(size),
+      is_bundle(is_bundle),
+      is_write(is_write),
+      address(address),
+      pc(pc) {}
+
 MemoryTrace::MemoryTrace(std::istream& tracefile) {
   for (std::string line; std::getline(tracefile, line);) {
     std::remove(line.begin(), line.end(), ',');
@@ -38,7 +47,8 @@ const std::vector<long> MemoryTrace::getRequestAddresses() const {
     assert(false && "This should never happen");
 
     /* requestAddresses.reserve(requests.size());
-    std::transform(requests.begin(), requests.end(), std::back_inserter(requestAddresses),
+    std::transform(requests.begin(), requests.end(),
+    std::back_inserter(requestAddresses),
                    [](MemoryRequest const& req) -> long { return req.address; }); */
   }
 

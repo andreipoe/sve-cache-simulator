@@ -3,9 +3,9 @@
 #include "DirectMappedCache.hh"
 #include "InfiniteCache.hh"
 
-Cache::Cache(int size, int line_size) : size(size), line_size(line_size) {}
+Cache::Cache(const int size, const int line_size) : size(size), line_size(line_size) {}
 
-Cache::Cache(CacheConfig config) : size(config.size), line_size(config.line_size) {}
+Cache::Cache(const CacheConfig config) : size(config.size), line_size(config.line_size) {}
 
 Cache::~Cache() {}
 

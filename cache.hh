@@ -29,8 +29,8 @@ class Cache {
 
   long hits = 0, misses = 0;
 
-  explicit Cache(int size, int line_size);
-  Cache(CacheConfig config);
+  explicit Cache(const int size, const int line_size);
+  Cache(const CacheConfig config);
 
   virtual const CacheAddress split_address(const long address) const;
 

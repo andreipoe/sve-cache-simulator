@@ -13,6 +13,6 @@ struct CacheConfig {
   /* Cache line size in bytes */
   int line_size;
 
-  CacheConfig(CacheType type, int size, int line_size);
+  CacheConfig(const CacheType type, const int size, const int line_size);
   CacheConfig(std::istream&& config_file);
 };

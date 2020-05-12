@@ -4,7 +4,7 @@
 
 #include "inipp.h"
 
-CacheConfig::CacheConfig(CacheType type, int size, int line_size)
+CacheConfig::CacheConfig(const CacheType type, const int size, const int line_size)
     : type(type), size(size), line_size(line_size) {}
 
 CacheConfig::CacheConfig(std::istream&& config_file) {

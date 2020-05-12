@@ -8,11 +8,11 @@ class DirectMappedCache : public Cache {
   std::vector<CacheEntry> cache_lines;
 
  protected:
-  virtual const CacheAddress split_address(long address) const override;
+  virtual const CacheAddress split_address(const long address) const override;
 
  public:
-  DirectMappedCache(CacheConfig config);
+  DirectMappedCache(const CacheConfig config);
 
   using Cache::touch;
-  virtual const CacheEvent touch(long address) override;
+  virtual const CacheEvent touch(const long address) override;
 };
