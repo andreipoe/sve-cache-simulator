@@ -1,6 +1,11 @@
 image: ubuntu:20.04
 
+stages:
+  - basic build
+  - more builds
+
 gcc:
+  stage: basic build
   script:
     - apt-get -qq update && apt-get -qq install -y make g++ >/dev/null 2>&1
     - make -j COMPILER=GNU
@@ -8,6 +13,7 @@ gcc:
     - ./test/scs-test
 
 clang:
+  stage: more builds
   script:
     - apt-get -qq update && apt-get -qq install -y make clang >/dev/null 2>&1
     - make -j COMPILER=CLANG
@@ -15,9 +21,10 @@ clang:
     - ./test/scs-test
 
 meson:
+  stage: more builds
   image:
     name: python:3.8-buster
-    entrypoint: ["bash"]
+    entrypoint: ["/bin/bash", "-l", "-c"]
   script:
     - apt-get -qq update && apt-get -qq install -y ninja-build >/dev/null 2>&1
     - pip3 install meson
