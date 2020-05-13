@@ -13,3 +13,15 @@ clang:
     - make -j COMPILER=CLANG
     - make -j COMPILER=CLANG test
     - ./test/scs-test
+
+meson:
+  image:
+    name: python:3.8-buster
+    entrypoint: bash
+  script:
+    - apt-get -qq update && apt-get -qq install -y ninja-build >/dev/null 2>&1
+    - pip3 install meson
+    - env CXX=g++ meson build-gnu
+    - cd build-gnu
+    - ninja
+    - ./scs-test

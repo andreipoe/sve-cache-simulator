@@ -1,0 +1,1 @@
+option('arch', type: 'string', value: 'native', description: 'The target architecture')

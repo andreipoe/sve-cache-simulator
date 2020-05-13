@@ -5,7 +5,10 @@
 #include <vector>
 
 std::string try_tracefile_names(const std::string& name) {
-  const std::vector<std::string> paths { "", "traces/", "test/", "test/traces/" };
+  const std::vector<std::string> paths { "",         "traces/",
+                                         "test/",    "test/traces/",
+                                         "../",      "../traces/",
+                                         "../test/", "../test/traces/" };
 
   for (auto const& path : paths)
     if (std::filesystem::exists(path + name)) return path + name;
@@ -14,8 +17,10 @@ std::string try_tracefile_names(const std::string& name) {
 }
 
 std::string try_configfile_names(const std::string& name) {
-  const std::vector<std::string> paths { "", "configs/", "test/", "test/configs/",
-                                         "../configs/" };
+  const std::vector<std::string> paths { "",         "configs/",
+                                         "test/",    "test/configs/",
+                                         "../",      "../configs/",
+                                         "../test/", "../test/configs/" };
 
   for (auto const& path : paths)
     if (std::filesystem::exists(path + name)) return path + name;
