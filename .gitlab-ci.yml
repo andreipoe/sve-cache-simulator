@@ -17,7 +17,7 @@ clang:
 meson:
   image:
     name: python:3.8-buster
-    entrypoint: bash
+    entrypoint: ["bash"]
   script:
     - apt-get -qq update && apt-get -qq install -y ninja-build >/dev/null 2>&1
     - pip3 install meson
