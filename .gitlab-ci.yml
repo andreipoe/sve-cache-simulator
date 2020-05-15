@@ -1,4 +1,4 @@
-image: ubuntu:20.04
+image: andreipoe/buildpack-cpp:20.04
 
 stages:
   - basic build
@@ -7,7 +7,6 @@ stages:
 gcc:
   stage: basic build
   script:
-    - apt-get -qq update && apt-get -qq install -y make g++ >/dev/null 2>&1
     - make -j COMPILER=GNU
     - make -j COMPILER=GNU test
     - ./test/scs-test
@@ -15,19 +14,13 @@ gcc:
 clang:
   stage: more builds
   script:
-    - apt-get -qq update && apt-get -qq install -y make clang >/dev/null 2>&1
     - make -j COMPILER=CLANG
     - make -j COMPILER=CLANG test
     - ./test/scs-test
 
 meson:
   stage: more builds
-  image:
-    name: python:3.8-buster
-    entrypoint: ["/bin/bash", "-l", "-c"]
   script:
-    - apt-get -qq update && apt-get -qq install -y ninja-build >/dev/null 2>&1
-    - pip3 install meson
     - env CXX=g++ meson build-gnu
     - cd build-gnu
     - ninja
