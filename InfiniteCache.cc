@@ -4,8 +4,7 @@
 
 InfiniteCache::InfiniteCache() : Cache(std::numeric_limits<uint64_t>::max(), 64) {}
 
-CacheEvent InfiniteCache::touch(const uint64_t address) {
-  auto const& cache_address = split_address(address);
+CacheEvent InfiniteCache::touch(const CacheAddress& cache_address) {
   auto cached_element = addresses.find(cache_address.index);
   CacheEvent event;
 

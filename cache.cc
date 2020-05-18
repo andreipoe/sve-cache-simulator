@@ -3,7 +3,29 @@
 #include "DirectMappedCache.hh"
 #include "InfiniteCache.hh"
 
-constexpr unsigned int log2(const uint64_t n) { return n < 2 ? n : 1 + log2(n >> 1); }
+static constexpr unsigned int log2(const uint64_t n) {
+  return n == 1 ? 0 : 1 + log2(n >> 1);
+}
+
+// ------
+
+CacheAddress::CacheAddress(uint64_t address, uint64_t cache_size,
+                           unsigned int line_size) {
+  const unsigned int block_bits { log2(line_size) };
+  const unsigned int index_bits { log2(cache_size) - log2(line_size) };
+
+  block = address & ((1 << block_bits) - 1);
+  index = (address >> block_bits) & ((1 << index_bits) - 1);
+  tag = address >> (block_bits + index_bits);
+}
+
+CacheAddress::CacheAddress(uint64_t address, const CacheConfig& config)
+    : CacheAddress(address, config.size, config.line_size) {}
+
+CacheAddress::CacheAddress(uint64_t address, const Cache& cache)
+    : CacheAddress(address, cache.getSize(), cache.getLineSize()) {}
+
+// ------
 
 Cache::Cache(const uint64_t size, const int line_size)
     : size(size),
@@ -20,11 +42,23 @@ Cache::Cache(const CacheConfig config)
 Cache::~Cache() {}
 
 const CacheAddress Cache::split_address(const uint64_t address) const {
-  int block = address & ((1 << block_bits) - 1);
-  int index = (address >> block_bits) & ((1 << index_bits) - 1);
-  uint64_t tag = address >> (block_bits + index_bits);
+  return CacheAddress(address, *this);
+}
 
-  return { tag, index, block };
+void Cache::touch(const uint64_t address, const int size) {
+  uint64_t next_address { address };
+  int remaining_size { size };
+
+  while (remaining_size > 0) {
+    // Find the first cache line this request touches
+    auto const& cache_address = split_address(next_address);
+    touch(cache_address);
+
+    // Skip over the remaining bytes in this same cache line
+    const unsigned int covered_bytes = line_size - cache_address.block;
+    remaining_size -= covered_bytes;
+    next_address += covered_bytes;
+  }
 }
 
 void Cache::touch(const std::vector<uint64_t> addresses) {
@@ -51,7 +85,6 @@ std::unique_ptr<Cache> Cache::make_cache(const CacheConfig config) {
       throw std::invalid_argument("Unknown cache type");
   }
 }
-
 
 NotImplementedException::NotImplementedException()
     : std::logic_error("Not implemented") {}

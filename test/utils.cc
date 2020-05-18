@@ -27,3 +27,7 @@ std::string try_configfile_names(const std::string& name) {
 
   throw std::invalid_argument("Cannot find config file: " + name);
 }
+
+std::unique_ptr<Cache> make_default_cache(CacheType type) {
+  return Cache::make_cache({ type, DEFAULT_CACHE_SIZE, DEFAULT_LINE_SIZE });
+}

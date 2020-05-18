@@ -11,5 +11,5 @@ class DirectMappedCache : public Cache {
   DirectMappedCache(const CacheConfig config);
 
   using Cache::touch;
-  virtual CacheEvent touch(const uint64_t address) override;
+  virtual CacheEvent touch(const CacheAddress& address) override;
 };
