@@ -2,8 +2,10 @@ project('sve-cache-simulator', 'cpp', version: '0.0.1',
   default_options: ['cpp_std=c++17', 'buildtype=release', 'b_lto=true', 'warning_level=3'])
 
 # ------- Build Options -------
-build_type = get_option('buildtype')
 cpp_args = []
+link_args = []
+
+build_type = get_option('buildtype')
 if build_type == 'release'
   cpp_args = ['-ffast-math']
 
@@ -22,10 +24,10 @@ if build_type == 'release'
   endif
 elif build_type == 'debug'
   cpp_args += ['-Og', '-g3']
+  link_args += ['-g3']
 endif
 
 # Fix Homebew LLVM build on Mac
-link_args = []
 if build_machine.system() == 'darwin'
   link_args += ['-L/usr/local/opt/llvm/lib', '-,-rpath,/usr/local/opt/llvm/lib', -'mlinker-version=305']
 endif
