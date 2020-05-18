@@ -5,7 +5,7 @@
 
 constexpr unsigned int log2(const uint64_t n) { return n < 2 ? n : 1 + log2(n >> 1); }
 
-Cache::Cache(const int size, const int line_size)
+Cache::Cache(const uint64_t size, const int line_size)
     : size(size),
       line_size(line_size),
       block_bits(log2(line_size)),
@@ -26,7 +26,6 @@ const CacheAddress Cache::split_address(const uint64_t address) const {
 
   return { tag, index, block };
 }
-
 
 void Cache::touch(const std::vector<uint64_t> addresses) {
   for (auto const& a : addresses)
