@@ -42,7 +42,7 @@ MemoryTrace::MemoryTrace(std::istream& tracefile) {
 
 const std::vector<MemoryRequest> MemoryTrace::getRequests() const { return requests; }
 
-const std::vector<long> MemoryTrace::getRequestAddresses() const {
+const std::vector<uint64_t> MemoryTrace::getRequestAddresses() const {
   if (requests.size() != requestAddresses.size()) {
     assert(false && "This should never happen");
 

@@ -1,20 +1,7 @@
 #include "DirectMappedCache.hh"
 
-// TODO: make these parameters configurable
-const int cache_size = 32 * 1024;  // 32 KB
-const int block_size = 6;          // 64-byte cache lines
-const int index_size = 9;
-
 DirectMappedCache::DirectMappedCache(const CacheConfig config) : Cache(config) {
-  cache_lines.resize(cache_size / block_size, { 0, false });
-}
-
-const CacheAddress DirectMappedCache::split_address(const uint64_t address) const {
-  int block = address & ((1 << block_size) - 1);
-  int index = (address >> block_size) & ((1 << index_size) - 1);
-  uint64_t tag = address >> (block_size + index_size);
-
-  return { tag, index, block };
+  cache_lines.resize(size / block_bits, { 0, false });
 }
 
 CacheEvent DirectMappedCache::touch(const uint64_t address) {

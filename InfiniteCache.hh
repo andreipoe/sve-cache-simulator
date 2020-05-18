@@ -5,7 +5,7 @@
 #include "cache.hh"
 
 class InfiniteCache : public Cache {
-  std::set<long> addresses;
+  std::set<uint64_t> addresses;
 
  public:
   InfiniteCache();

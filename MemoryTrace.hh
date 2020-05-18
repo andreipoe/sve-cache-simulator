@@ -15,13 +15,13 @@ struct MemoryRequest {
 /* Represents an ArmIE memory trace */
 class MemoryTrace {
   std::vector<MemoryRequest> requests;
-  std::vector<long> requestAddresses;
+  std::vector<uint64_t> requestAddresses;
 
  public:
   /* Construct a MemoryTrace object from a trace file */
   explicit MemoryTrace(std::istream& tracefile);
 
   const std::vector<MemoryRequest> getRequests() const;
-  const std::vector<long> getRequestAddresses() const;
+  const std::vector<uint64_t> getRequestAddresses() const;
   size_t getLength() const;
 };

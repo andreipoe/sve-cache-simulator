@@ -25,14 +25,24 @@ class NotImplementedException : public std::logic_error {
 
 class Cache {
  protected:
-  int size, line_size;
+  /* The total size of the cache, in bytes */
+  const int size;
+
+  /* The size of a cache line, in bytes */
+  const int line_size;
+
+  /* The numer of bits required to address a cache line */
+  const int block_bits;
+
+  /* The numer of bits required to address a cache set */
+  const int index_bits;
 
   uint64_t hits { 0 }, misses { 0 };
 
   explicit Cache(const int size, const int line_size);
   Cache(const CacheConfig config);
 
-  virtual const CacheAddress split_address(const uint64_t address) const;
+  virtual const CacheAddress split_address(const uint64_t address) const final;
 
  public:
   virtual ~Cache();
@@ -41,7 +51,7 @@ class Cache {
   virtual  CacheEvent touch(const uint64_t address) = 0;
 
   /* Run a sequence of addresses through the cache */
-  void touch(const std::vector<long> addresses);
+  void touch(const std::vector<uint64_t> addresses);
 
   int getSize() const;
   int getLineSize() const;
