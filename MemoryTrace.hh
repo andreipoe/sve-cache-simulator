@@ -23,5 +23,5 @@ class MemoryTrace {
 
   const std::vector<MemoryRequest> getRequests() const;
   const std::vector<long> getRequestAddresses() const;
-  const size_t getLength() const;
+  size_t getLength() const;
 };

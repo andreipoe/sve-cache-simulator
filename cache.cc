@@ -14,18 +14,21 @@ void Cache::touch(const std::vector<long> addresses) {
     touch(a);
 }
 
-const int Cache::getSize() const { return size; }
-const int Cache::getLineSize() const { return line_size; }
+int Cache::getSize() const { return size; }
+int Cache::getLineSize() const { return line_size; }
 
-const long Cache::getHits() const { return hits; }
+long Cache::getHits() const { return hits; }
 
-const long Cache::getMisses() const { return misses; }
+long Cache::getMisses() const { return misses; }
 
-const long Cache::getTotalAccesses() const { return hits + misses; }
+long Cache::getTotalAccesses() const { return hits + misses; }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 const CacheAddress Cache::split_address(const long address) const {
   throw NotImplementedException();
 }
+#pragma GCC diagnostic pop
 
 std::unique_ptr<Cache> Cache::make_cache(const CacheConfig config) {
   switch (config.type) {

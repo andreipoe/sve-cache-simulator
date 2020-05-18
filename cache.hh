@@ -38,17 +38,17 @@ class Cache {
   virtual ~Cache();
 
   /* Run a single address through the cache */
-  virtual const CacheEvent touch(const long address) = 0;
+  virtual  CacheEvent touch(const long address) = 0;
 
   /* Run a sequence of addresses through the cache */
   void touch(const std::vector<long> addresses);
 
-  const int getSize() const;
-  const int getLineSize() const;
+  int getSize() const;
+  int getLineSize() const;
 
-  const long getHits() const;
-  const long getMisses() const;
-  const long getTotalAccesses() const;
+  long getHits() const;
+  long getMisses() const;
+  long getTotalAccesses() const;
 
   static std::unique_ptr<Cache> make_cache(const CacheConfig config);
 };

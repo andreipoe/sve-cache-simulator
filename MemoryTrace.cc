@@ -55,7 +55,7 @@ const std::vector<long> MemoryTrace::getRequestAddresses() const {
   return requestAddresses;
 }
 
-const size_t MemoryTrace::getLength() const {
+size_t MemoryTrace::getLength() const {
   assert(requests.size() == requestAddresses.size());
   return requests.size();
 }

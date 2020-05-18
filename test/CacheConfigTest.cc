@@ -29,7 +29,7 @@ TEST_CASE("make_cache makes the right type of cache") {
 }
 
 TEST_CASE("Constructed caches have parameters given in CacheConfig") {
-  const int size { 4 * 1024 }, line_size { 512 };
+  int size { 4 * 1024 }, line_size { 512 };
   const CacheConfig config { CacheType::DirectMapped, size, line_size };
   const DirectMappedCache cache(config);
 

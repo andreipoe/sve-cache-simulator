@@ -1,5 +1,5 @@
 project('sve-cache-simulator', 'cpp', version: '0.0.1',
-  default_options: ['cpp_std=c++17', 'buildtype=release', 'b_lto=true', 'warning_level=1'])
+  default_options: ['cpp_std=c++17', 'buildtype=release', 'b_lto=true', 'warning_level=3'])
 
 # ------- Build Options -------
 build_type = get_option('buildtype')

@@ -17,7 +17,7 @@ const CacheAddress DirectMappedCache::split_address(const long address) const {
   return { tag, index, block };
 }
 
-const CacheEvent DirectMappedCache::touch(const long address) {
+CacheEvent DirectMappedCache::touch(const long address) {
   auto address_split = split_address(address);
   auto cl_index = address_split.index;
 
