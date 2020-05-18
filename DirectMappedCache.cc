@@ -9,15 +9,15 @@ DirectMappedCache::DirectMappedCache(const CacheConfig config) : Cache(config) {
   cache_lines.resize(cache_size / block_size, { 0, false });
 }
 
-const CacheAddress DirectMappedCache::split_address(const long address) const {
+const CacheAddress DirectMappedCache::split_address(const uint64_t address) const {
   int block = address & ((1 << block_size) - 1);
   int index = (address >> block_size) & ((1 << index_size) - 1);
-  long tag = address >> (block_size + index_size);
+  uint64_t tag = address >> (block_size + index_size);
 
   return { tag, index, block };
 }
 
-CacheEvent DirectMappedCache::touch(const long address) {
+CacheEvent DirectMappedCache::touch(const uint64_t address) {
   auto address_split = split_address(address);
   auto cl_index = address_split.index;
 

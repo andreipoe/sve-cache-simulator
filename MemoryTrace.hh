@@ -6,10 +6,10 @@
 struct MemoryRequest {
   int tid, size;
   bool is_bundle, is_write;
-  long address, pc;
+  uint64_t address, pc;
 
   explicit MemoryRequest(const int tid, const int size, const bool is_bundle,
-                         const bool is_write, const long address, const long pc);
+                         const bool is_write, const uint64_t address, const uint64_t pc);
 };
 
 /* Represents an ArmIE memory trace */

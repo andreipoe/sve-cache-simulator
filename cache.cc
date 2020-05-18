@@ -17,15 +17,15 @@ void Cache::touch(const std::vector<long> addresses) {
 int Cache::getSize() const { return size; }
 int Cache::getLineSize() const { return line_size; }
 
-long Cache::getHits() const { return hits; }
+uint64_t Cache::getHits() const { return hits; }
 
-long Cache::getMisses() const { return misses; }
+uint64_t Cache::getMisses() const { return misses; }
 
-long Cache::getTotalAccesses() const { return hits + misses; }
+uint64_t Cache::getTotalAccesses() const { return hits + misses; }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-const CacheAddress Cache::split_address(const long address) const {
+const CacheAddress Cache::split_address(const uint64_t address) const {
   throw NotImplementedException();
 }
 #pragma GCC diagnostic pop

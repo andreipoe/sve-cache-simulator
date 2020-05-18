@@ -6,7 +6,7 @@
 #include "MemoryTrace.hh"
 
 MemoryRequest::MemoryRequest(const int tid, const int size, const bool is_bundle,
-                             const bool is_write, const long address, const long pc)
+                             const bool is_write, const uint64_t address, const uint64_t pc)
     : tid(tid),
       size(size),
       is_bundle(is_bundle),
@@ -26,7 +26,7 @@ MemoryTrace::MemoryTrace(std::istream& tracefile) {
 
     int seq, tid, size;
     bool is_bundle, is_write;
-    long address, pc;
+    uint64_t address, pc;
     iss >> seq >> tid >> is_bundle >> is_write >> size;
     iss >> std::hex >> address >> pc;
 
@@ -49,7 +49,7 @@ const std::vector<long> MemoryTrace::getRequestAddresses() const {
     /* requestAddresses.reserve(requests.size());
     std::transform(requests.begin(), requests.end(),
     std::back_inserter(requestAddresses),
-                   [](MemoryRequest const& req) -> long { return req.address; }); */
+                   [](MemoryRequest const& req) -> uint64_t { return req.address; }); */
   }
 
   return requestAddresses;

@@ -32,7 +32,7 @@ TEST_CASE("First touch always misses") {
 }
 
 TEST_CASE("Second touch always hits") {
-  long address { 0xdead };
+  uint64_t address { 0xdead };
 
   InfiniteCache ic;
   DirectMappedCache dmc({ CacheType::DirectMapped, CACHE_SIZE, LINE_SIZE });
