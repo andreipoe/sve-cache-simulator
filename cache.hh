@@ -36,7 +36,6 @@ class Cache {
   /* The total size of the cache, in bytes */
   const uint64_t size;
 
-  // TODO: these should be unsigned
   /* The size of a cache line, in bytes */
   const int line_size;
 

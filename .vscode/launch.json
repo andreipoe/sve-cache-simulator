@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "(gdb) Launch make-build",
+      "name": "gdb: make-build",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/scs",
@@ -26,7 +26,7 @@
       ]
     },
     {
-      "name": "(gdb) Launch meson-build",
+      "name": "gdb: meson-build",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build-debug-gnu/scs",
@@ -47,7 +47,7 @@
       ]
     },
     {
-      "name": "(gdb) Launch meson-build test",
+      "name": "gdb: meson-test",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build-debug-gnu/scs-test",
