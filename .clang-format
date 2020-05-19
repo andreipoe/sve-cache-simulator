@@ -4,10 +4,13 @@ DerivePointerAlignment: false
 PointerAlignment: true
 Standard: C++11
 
+AlignConsecutiveAssignments: true
+AlignConsecutiveMacros: true
 AllowShortLoopsOnASingleLine: false
 ColumnLimit: 90
 Cpp11BracedListStyle: false
 IncludeBlocks: "Preserve"
+MaxEmptyLinesToKeep: 2
 SpaceBeforeCpp11BracedList: true
 SpaceBeforeParens: "ControlStatements"
 # SpaceInEmptyBlock: true

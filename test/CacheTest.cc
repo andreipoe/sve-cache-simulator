@@ -8,11 +8,12 @@
 #include "utils.hh"
 
 #define CACHE_SIZE DEFAULT_CACHE_SIZE
-#define LINE_SIZE DEFAULT_LINE_SIZE
+#define LINE_SIZE  DEFAULT_LINE_SIZE
 
 #define RANDOM_COUNT 10
 
-// TODO: Use the same generator approach in all tests
+auto const CACHE_TYPES = { CacheType::Infinite, CacheType::DirectMapped };
+
 
 TEST_CASE("Addresses are split correctly") {
   const CacheConfig config { CacheType::Infinite, CACHE_SIZE, LINE_SIZE };
@@ -27,52 +28,38 @@ TEST_CASE("Addresses are split correctly") {
 }
 
 TEST_CASE("Cache stats are properly initialised") {
-  auto type = GENERATE(CacheType::Infinite, CacheType::DirectMapped);
-  std::unique_ptr<Cache> cache = make_default_cache(type);
+  std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
 
   REQUIRE(cache->getHits() == 0);
   REQUIRE(cache->getMisses() == 0);
 }
 
 TEST_CASE("First touch always misses") {
-  auto filename = try_tracefile_names("traces/7.trace");
+  const uint64_t address { static_cast<uint64_t>(
+      GENERATE(take(RANDOM_COUNT, random(0, DEFAULT_CACHE_SIZE)))) };
 
-  std::ifstream tracefile(filename);
-  MemoryTrace trace(tracefile);
+  std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
 
-  SECTION("Infinite cache") {
-    InfiniteCache cache;
-    cache.touch(trace.getRequestAddresses());
-
-    REQUIRE(cache.getHits() == 0);
-  }
-
-  SECTION("Direct-mapped cache") {
-    DirectMappedCache cache({ CacheType::DirectMapped, CACHE_SIZE, LINE_SIZE });
-    cache.touch(trace.getRequestAddresses());
-
-    REQUIRE(cache.getHits() == 0);
-  }
+  cache->touch(address);
+  REQUIRE(cache->getHits() == 0);
+  REQUIRE(cache->getMisses() == 1);
 }
 
 TEST_CASE("Second touch always hits") {
-  uint64_t address { 0xdead };
+  const uint64_t address { static_cast<uint64_t>(
+      GENERATE(take(RANDOM_COUNT, random(0, DEFAULT_CACHE_SIZE)))) };
 
-  InfiniteCache ic;
-  DirectMappedCache dmc({ CacheType::DirectMapped, CACHE_SIZE, LINE_SIZE });
+  std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
 
-  for (Cache* cache : std::vector<Cache*> { &ic, &dmc }) {
-    cache->touch(address);
-    cache->touch(address);
+  cache->touch(address);  // miss
+  cache->touch(address);  // hit
 
-    REQUIRE(cache->getMisses() == 1);
-    REQUIRE(cache->getHits() == 1);
-  }
+  REQUIRE(cache->getMisses() == 1);
+  REQUIRE(cache->getHits() == 1);
 }
 
 TEST_CASE("Accessing an aligned value brings in a whole cache line") {
-  auto type = GENERATE(CacheType::Infinite, CacheType::DirectMapped);
-  std::unique_ptr<Cache> cache = make_default_cache(type);
+  std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
 
   // Generate addresses that map to the first element in a cache line
   const int r { GENERATE(
@@ -95,8 +82,7 @@ TEST_CASE("Accessing an aligned value brings in a whole cache line") {
 }
 
 TEST_CASE("Accessing an unaligned value brings in a whole cache line") {
-  auto type = GENERATE(CacheType::Infinite, CacheType::DirectMapped);
-  std::unique_ptr<Cache> cache = make_default_cache(type);
+  std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
 
   // Generate addresses that don't map to the first element in a cache line
   const uint64_t initial_address { static_cast<uint64_t>(
@@ -123,8 +109,7 @@ TEST_CASE("Accessing an unaligned value brings in a whole cache line") {
 }
 
 TEST_CASE("Accesses bigger than the size of a cache line touch multiple cache lines") {
-  auto type = GENERATE(CacheType::Infinite, CacheType::DirectMapped);
-  std::unique_ptr<Cache> cache = make_default_cache(type);
+  std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
 
   // Generate addresses that map to the first element in a cache line
   const int r { GENERATE(
