@@ -3,8 +3,9 @@
 #include <fstream>
 #include <set>
 
-#include "MemoryTrace.hh"
 #include "utils.hh"
+
+#include "MemoryTrace.hh"
 
 TEST_CASE("Traces are loaded correctly") {
   auto filename = try_tracefile_names("traces/8.trace");

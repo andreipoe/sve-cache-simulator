@@ -3,10 +3,11 @@
 #include <fstream>
 #include <typeinfo>
 
+#include "utils.hh"
+
 #include "CacheConfig.hh"
 #include "DirectMappedCache.hh"
 #include "InfiniteCache.hh"
-#include "utils.hh"
 
 TEST_CASE("Reading cache configuration from ini files works") {
   std::string filename;

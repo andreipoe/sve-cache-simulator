@@ -50,7 +50,9 @@ main_exe = executable('scs', src_common + src_main, cpp_args: cpp_args, link_arg
 src_test = files([
   'test/CacheConfigTest.cc',
   'test/CacheTest.cc',
+  'test/DirectMappedCacheTest.cc',
   'test/MemoryTraceTest.cc',
+  'test/SetAssociativeCacheTest.cc',
   'test/test.cc',
   'test/utils.cc'
 ])

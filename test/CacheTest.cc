@@ -1,22 +1,26 @@
 #include "catch.hpp"
 
+#include <limits>
 #include <vector>
+
+#include "utils.hh"
 
 #include "DirectMappedCache.hh"
 #include "InfiniteCache.hh"
 #include "MemoryTrace.hh"
-#include "utils.hh"
 
-#define RANDOM_COUNT 10
+#define RANDOM_COUNT DEFAULT_RANDOM_COUNT
 
-auto const CACHE_TYPES = { CacheType::Infinite, CacheType::DirectMapped, CacheType::SetAssociative };
+auto const CACHE_TYPES = { CacheType::Infinite, CacheType::DirectMapped,
+                           CacheType::SetAssociative };
 
 
 TEST_CASE("Addresses are split correctly") {
   const CacheConfig config { CacheType::Infinite, DEFAULT_CACHE_SIZE, DEFAULT_LINE_SIZE };
 
   const unsigned int block { 32 }, index { 160 }, tag { 12 };
-  const uint64_t address { tag << nbits(DEFAULT_CACHE_SIZE) | index << nbits(DEFAULT_LINE_SIZE) | block };
+  const uint64_t address { tag << nbits(DEFAULT_CACHE_SIZE) |
+                           index << nbits(DEFAULT_LINE_SIZE) | block };
 
   const CacheAddress cache_address(address, config);
   REQUIRE(cache_address.tag == tag);
@@ -29,6 +33,22 @@ TEST_CASE("Cache stats are properly initialised") {
 
   REQUIRE(cache->getHits() == 0);
   REQUIRE(cache->getMisses() == 0);
+}
+
+TEST_CASE("Hits and misses always add up to total touches") {
+  const int TOUCH_COUNT { 1000 };
+
+  std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
+
+  const auto& addresses = GENERATE(
+      take(1, chunk(TOUCH_COUNT,
+                    random(0, static_cast<int>(std::numeric_limits<uint64_t>::max())))));
+
+  for (auto address : addresses)
+    cache->touch(address);
+
+  REQUIRE(cache->getTotalAccesses() == TOUCH_COUNT);
+  REQUIRE(cache->getHits() + cache->getMisses() == TOUCH_COUNT);
 }
 
 TEST_CASE("First touch always misses") {
