@@ -2,6 +2,7 @@
 
 #include "DirectMappedCache.hh"
 #include "InfiniteCache.hh"
+#include "SetAssociativeCache.hh"
 
 static constexpr unsigned int log2(const uint64_t n) {
   return n == 1 ? 0 : 1 + log2(n >> 1);
@@ -9,35 +10,32 @@ static constexpr unsigned int log2(const uint64_t n) {
 
 // ------
 
-CacheAddress::CacheAddress(uint64_t address, uint64_t cache_size,
-                           unsigned int line_size) {
+CacheAddress::CacheAddress(uint64_t address, uint64_t cache_size, int line_size,
+                           int set_size) {
   const unsigned int block_bits { log2(line_size) };
-  const unsigned int index_bits { log2(cache_size) - log2(line_size) };
+  const unsigned int index_bits { log2(cache_size) - log2(line_size) - log2(set_size) };
 
   block = address & ((1 << block_bits) - 1);
   index = (address >> block_bits) & ((1 << index_bits) - 1);
-  tag = address >> (block_bits + index_bits);
+  tag   = address >> (block_bits + index_bits);
 }
 
 CacheAddress::CacheAddress(uint64_t address, const CacheConfig& config)
-    : CacheAddress(address, config.size, config.line_size) {}
+    : CacheAddress(address, config.size, config.line_size, config.set_size) {}
 
 CacheAddress::CacheAddress(uint64_t address, const Cache& cache)
-    : CacheAddress(address, cache.getSize(), cache.getLineSize()) {}
+    : CacheAddress(address, cache.getSize(), cache.getLineSize(), cache.getSetSize()) {}
 
 // ------
 
-Cache::Cache(const uint64_t size, const int line_size)
-    : size(size),
-      line_size(line_size),
-      block_bits(log2(line_size)),
-      index_bits(log2(size) - log2(line_size)) {}
+CacheEntry::CacheEntry(uint64_t tag) : tag(tag), valid(true) {}
 
-Cache::Cache(const CacheConfig config)
-    : size(config.size),
-      line_size(config.line_size),
-      block_bits(log2(config.line_size)),
-      index_bits(log2(config.size) - log2(config.line_size)) {}
+// ------
+
+Cache::Cache(const uint64_t size, const int line_size, const int set_size)
+    : size(size), line_size(line_size), set_size(set_size) {}
+
+Cache::Cache(const CacheConfig config) : size(config.size), line_size(config.line_size), set_size(config.set_size) {}
 
 Cache::~Cache() {}
 
@@ -68,6 +66,7 @@ void Cache::touch(const std::vector<uint64_t> addresses) {
 
 int Cache::getSize() const { return size; }
 int Cache::getLineSize() const { return line_size; }
+int Cache::getSetSize() const { return set_size; }
 
 uint64_t Cache::getHits() const { return hits; }
 
@@ -81,6 +80,8 @@ std::unique_ptr<Cache> Cache::make_cache(const CacheConfig config) {
       return std::make_unique<InfiniteCache>();
     case CacheType::DirectMapped:
       return std::make_unique<DirectMappedCache>(config);
+    case CacheType::SetAssociative:
+      return std::make_unique<SetAssociativeCache>(config);
     default:
       throw std::invalid_argument("Unknown cache type");
   }

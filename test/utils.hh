@@ -7,6 +7,7 @@
 
 #define DEFAULT_CACHE_SIZE 32 * 1024
 #define DEFAULT_LINE_SIZE 64
+#define DEFAULT_SET_SIZE 4
 
 /* Try a few common locations where test trace files can be found, returning the first one
  * that matches or raising an exception */

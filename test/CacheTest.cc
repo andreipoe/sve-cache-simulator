@@ -7,19 +7,16 @@
 #include "MemoryTrace.hh"
 #include "utils.hh"
 
-#define CACHE_SIZE DEFAULT_CACHE_SIZE
-#define LINE_SIZE  DEFAULT_LINE_SIZE
-
 #define RANDOM_COUNT 10
 
-auto const CACHE_TYPES = { CacheType::Infinite, CacheType::DirectMapped };
+auto const CACHE_TYPES = { CacheType::Infinite, CacheType::DirectMapped, CacheType::SetAssociative };
 
 
 TEST_CASE("Addresses are split correctly") {
-  const CacheConfig config { CacheType::Infinite, CACHE_SIZE, LINE_SIZE };
+  const CacheConfig config { CacheType::Infinite, DEFAULT_CACHE_SIZE, DEFAULT_LINE_SIZE };
 
   const unsigned int block { 32 }, index { 160 }, tag { 12 };
-  const uint64_t address { tag << nbits(CACHE_SIZE) | index << nbits(LINE_SIZE) | block };
+  const uint64_t address { tag << nbits(DEFAULT_CACHE_SIZE) | index << nbits(DEFAULT_LINE_SIZE) | block };
 
   const CacheAddress cache_address(address, config);
   REQUIRE(cache_address.tag == tag);

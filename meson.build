@@ -39,7 +39,8 @@ src_common = files([
   'CacheConfig.cc',
   'DirectMappedCache.cc',
   'InfiniteCache.cc',
-  'MemoryTrace.cc'
+  'MemoryTrace.cc',
+  'SetAssociativeCache.cc'
 ])
 src_main = files('main.cc')
 main_exe = executable('scs', src_common + src_main, cpp_args: cpp_args, link_args: link_args)

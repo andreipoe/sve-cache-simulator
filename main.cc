@@ -9,6 +9,7 @@
 #include "CacheConfig.hh"
 #include "DirectMappedCache.hh"
 #include "InfiniteCache.hh"
+#include "SetAssociativeCache.hh"
 #include "MemoryTrace.hh"
 
 void run_and_print_stats(MemoryTrace const& trace, Cache& cache) {
@@ -47,9 +48,16 @@ int main(int argc, char* argv[]) {
   std::cout << "--------------\n";
 
   std::cout << "Using a direct-mapped cache.\n";
-  CacheConfig config(CacheType::DirectMapped, 32768, 64);
-  DirectMappedCache direct_mapped_cache(config);
+  CacheConfig dm_config(CacheType::DirectMapped, 32768, 64);
+  DirectMappedCache direct_mapped_cache(dm_config);
   run_and_print_stats(trace, direct_mapped_cache);
+
+  std::cout << "--------------\n";
+
+  std::cout << "Using a set-associative cache.\n";
+  CacheConfig sa_config(CacheType::SetAssociative, 32768, 64, 4);
+  SetAssociativeCache set_associative_cache(sa_config);
+  run_and_print_stats(trace, set_associative_cache);
 
   return 0;
 }

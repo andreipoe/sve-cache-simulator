@@ -1,7 +1,7 @@
 #include "DirectMappedCache.hh"
 
-DirectMappedCache::DirectMappedCache(const CacheConfig config) : Cache(config) {
-  cache_lines.resize(size / block_bits, { 0, false });
+DirectMappedCache::DirectMappedCache(const CacheConfig config)
+    : Cache(config), cache_lines(size / line_size, CacheEntry{}) {
 }
 
 CacheEvent DirectMappedCache::touch(const CacheAddress& cache_address) {
@@ -16,7 +16,7 @@ CacheEvent DirectMappedCache::touch(const CacheAddress& cache_address) {
     event = CacheEvent::Miss;
   }
 
-  cache_lines[cache_address.index] = { cache_address.tag, true };
+  cache_lines[cache_address.index] = { cache_address.tag };
 
   return event;
 }

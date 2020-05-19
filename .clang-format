@@ -10,6 +10,7 @@ AllowShortLoopsOnASingleLine: false
 ColumnLimit: 90
 Cpp11BracedListStyle: false
 IncludeBlocks: "Preserve"
+KeepEmptyLinesAtTheStartOfBlocks: true
 MaxEmptyLinesToKeep: 2
 SpaceBeforeCpp11BracedList: true
 SpaceBeforeParens: "ControlStatements"
