@@ -4,16 +4,16 @@
 #include "InfiniteCache.hh"
 #include "SetAssociativeCache.hh"
 
-static constexpr unsigned int log2(const uint64_t n) {
-  return n == 1 ? 0 : 1 + log2(n >> 1);
+static constexpr unsigned int nbits(const uint64_t n) {
+  return n == 1 ? 0 : 1 + nbits(n >> 1);
 }
 
 // ------
 
 CacheAddress::CacheAddress(uint64_t address, uint64_t cache_size, int line_size,
                            int set_size) {
-  const unsigned int block_bits { log2(line_size) };
-  const unsigned int index_bits { log2(cache_size) - log2(line_size) - log2(set_size) };
+  const unsigned int block_bits { nbits(line_size) };
+  const unsigned int index_bits { nbits(cache_size) - nbits(line_size) - nbits(set_size) };
 
   block = address & ((1 << block_bits) - 1);
   index = (address >> block_bits) & ((1 << index_bits) - 1);

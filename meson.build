@@ -2,6 +2,7 @@ project('sve-cache-simulator', 'cpp', version: '0.0.1',
   default_options: ['cpp_std=c++17', 'buildtype=release', 'b_lto=true', 'warning_level=3'])
 
 # ------- Build Options -------
+# TODO: Consider setting flags with built-in meson functions
 cpp_args = []
 link_args = []
 
@@ -21,15 +22,17 @@ if build_type == 'release'
     cpp_args += ['-ffp-contract=fast', '-fsimdmath']
   elif compiler == 'clang'
     cpp_args += ['-ffp-contract=fast']
+
+    # Fix Homebew LLVM build on Mac
+    if build_machine.system() == 'darwin'
+      # TODO: setting rpath like this is deprecated
+      cpp_args += ['-I/usr/local/opt/llvm/include']
+      link_args += ['-L/usr/local/opt/llvm/lib', '-Wl,-rpath,/usr/local/opt/llvm/lib']
+endif
   endif
 elif build_type == 'debug'
   cpp_args += ['-Og', '-g3']
   link_args += ['-g3']
-endif
-
-# Fix Homebew LLVM build on Mac
-if build_machine.system() == 'darwin'
-  link_args += ['-L/usr/local/opt/llvm/lib', '-,-rpath,/usr/local/opt/llvm/lib', -'mlinker-version=305']
 endif
 
 

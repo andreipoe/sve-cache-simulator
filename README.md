@@ -41,6 +41,20 @@ ninja
 ```
 
 Only GNU and Clang have been tested, but Arm and Intel, and possibly Cray, should also work.
+On MacOS 10.14, there is an issue with the default linker command when using LLVM, which can be worked around by setting the linker version argument:
+
+```bash
+env CXX=clang++ LDFLAGS='-mlinker-version=450.3 -v' meson build-clang
+```
+
+### Compatibility
+
+On MacOS 10.14, not even Homebrew's LLVM's libc++ 10 accepts C++17 filesystem, so the tests can't be built; GCC 9 works fine.
+You can force using libstdc++ instead, for which the version shipped with GCC 9 works:
+
+```bash
+env CXX=clang++ CXXFLAGS='-stdlib=libstdc++ -I/usr/local/opt/gcc/include/c++/9.3.0 -I/usr/local/opt/gcc/include/c++/9.3.0/x86_64-apple-darwin18 -Wno-stdlibcxx-not-found' LDFLAGS='-L/usr/local/opt/gcc/lib/gcc/9 -mlinker-version=450.3' meson build-clang
+```
 
 ## Run
 
