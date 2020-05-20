@@ -30,7 +30,7 @@ if build_type == 'release'
       link_args += ['-L/usr/local/opt/llvm/lib', '-Wl,-rpath,/usr/local/opt/llvm/lib']
 endif
   endif
-elif build_type == 'debug'
+elif build_type == 'debug' and meson.get_compiler('cpp').get_id() == 'gcc'
   cpp_args += ['-Og', '-g3']
   link_args += ['-g3']
 endif
@@ -56,6 +56,7 @@ src_test = files([
   'test/DirectMappedCacheTest.cc',
   'test/MemoryTraceTest.cc',
   'test/SetAssociativeCacheTest.cc',
+  'test/RandomAddressGenerator.cc',
   'test/test.cc',
   'test/utils.cc'
 ])

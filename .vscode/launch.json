@@ -64,6 +64,18 @@
           "ignoreFailures": true
         }
       ]
+    },
+    {
+      "name": "lldb: meson-test",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build-debug-clang/scs-test",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build-debug-clang",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb"
     }
   ]
 }
