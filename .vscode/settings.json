@@ -1,6 +1,3 @@
 {
-  "files.associations": {
-    "limits": "cpp"
-  },
   "mesonbuild.configureOnOpen": true
 }

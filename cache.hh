@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -19,6 +20,13 @@ struct CacheAddress {
                         int set_size);
   explicit CacheAddress(uint64_t address, const CacheConfig& config);
   explicit CacheAddress(uint64_t address, const Cache& cache);
+
+  friend std::ostream& operator<<(std::ostream& stream,
+                                  const CacheAddress& cache_address) {
+    stream << "Address{ tag: " << cache_address.tag << ", index: " << cache_address.index
+           << ", block: " << cache_address.block << " }";
+    return stream;
+  }
 };
 
 /* A cache row entry (without the value, because it's never needed) */
@@ -72,6 +80,11 @@ class Cache {
   /* Run a sequence of addresses through the cache,
    * assuming the access doesn't cross cache-line boundaries */
   virtual void touch(const std::vector<uint64_t> addresses) final;
+
+  // TODO: return the cache events
+  /* Run a sequence of addresses through the cache,
+   * assuming the access doesn't cross cache-line boundaries */
+  virtual void touch(const std::vector<CacheAddress> addresses) final;
 
   virtual int getSize() const final;
   virtual int getLineSize() const final;

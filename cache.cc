@@ -64,6 +64,11 @@ void Cache::touch(const std::vector<uint64_t> addresses) {
     touch(a);
 }
 
+void Cache::touch(const std::vector<CacheAddress> addresses) {
+  for (auto const& a : addresses)
+    touch(a);
+}
+
 int Cache::getSize() const { return size; }
 int Cache::getLineSize() const { return line_size; }
 int Cache::getSetSize() const { return set_size; }

@@ -2,6 +2,8 @@
 
 #include <exception>
 #include <filesystem>
+#include <random>
+#include <set>
 #include <vector>
 
 std::string try_tracefile_names(const std::string& name) {
@@ -26,6 +28,31 @@ std::string try_configfile_names(const std::string& name) {
     if (std::filesystem::exists(path + name)) return path + name;
 
   throw std::invalid_argument("Cannot find config file: " + name);
+}
+
+namespace random_address {
+RandomAddressGenerator generator {};
+}  // namespace random_address
+
+// TODO: this should probably be seeded
+uint64_t get_random_address() {
+  using namespace random_address;
+  generator.next();
+  return generator.get();
+}
+
+std::vector<uint64_t> get_random_unique_addresses(int n, uint64_t except) {
+  std::set<uint64_t> addresses { except };
+
+  while (addresses.size() < static_cast<unsigned int>(n)) {
+    uint64_t next;
+    do {
+      next = get_random_address();
+    } while (addresses.find(next) != addresses.end());
+    addresses.insert(next);
+  }
+
+  return std::vector(addresses.begin(), addresses.end());
 }
 
 std::unique_ptr<Cache> make_default_cache(CacheType type) {

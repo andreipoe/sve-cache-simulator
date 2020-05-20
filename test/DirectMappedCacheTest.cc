@@ -2,7 +2,7 @@
 
 #include "utils.hh"
 
-TEST_CASE("Conflicting memory addresses evict previous data") {
+TEST_CASE("Conflicting memory addresses evict previous direct-mapped data") {
   const int RANDOM_COUNT { 2 };
 
   const uint64_t initial_address =
