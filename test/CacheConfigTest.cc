@@ -9,19 +9,19 @@
 #include "DirectMappedCache.hh"
 #include "InfiniteCache.hh"
 
-TEST_CASE("Reading cache configuration from ini files works") {
+TEST_CASE("Reading cache configuration from ini files works", "[config][params]") {
   std::string filename;
   CacheType expected_type;
   int expected_associativity;
 
   SECTION("Defining direct-mapped caches works") {
-    filename      = try_configfile_names("direct-32KB.ini");
-    expected_type = CacheType::DirectMapped;
+    filename               = try_configfile_names("direct-32KB.ini");
+    expected_type          = CacheType::DirectMapped;
     expected_associativity = 1;
   }
   SECTION("Defining set-associative caches works") {
-    filename      = try_configfile_names("assoc-32KB.ini");
-    expected_type = CacheType::SetAssociative;
+    filename               = try_configfile_names("assoc-32KB.ini");
+    expected_type          = CacheType::SetAssociative;
     expected_associativity = 4;
   }
 
@@ -33,7 +33,7 @@ TEST_CASE("Reading cache configuration from ini files works") {
   REQUIRE(c.set_size == expected_associativity);
 }
 
-TEST_CASE("make_cache makes the right type of cache") {
+TEST_CASE("make_cache makes the right type of cache", "[config][utils]") {
   std::unique_ptr<Cache> ic = Cache::make_cache({ CacheType::Infinite, 0, 0 });
   const auto& ic_ref        = *ic.get();
   REQUIRE(typeid(ic_ref).hash_code() == typeid(InfiniteCache).hash_code());
@@ -43,7 +43,7 @@ TEST_CASE("make_cache makes the right type of cache") {
   REQUIRE(typeid(dmc_ref).hash_code() == typeid(DirectMappedCache).hash_code());
 }
 
-TEST_CASE("Constructed caches have parameters given in CacheConfig") {
+TEST_CASE("Constructed caches have parameters given in CacheConfig", "[config]") {
   int size { 4 * 1024 }, line_size { 512 };
   const CacheConfig config { CacheType::DirectMapped, size, line_size };
   const DirectMappedCache cache(config);

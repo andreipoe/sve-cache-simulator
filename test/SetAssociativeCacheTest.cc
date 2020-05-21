@@ -4,7 +4,7 @@
 
 #include "utils.hh"
 
-TEST_CASE("Conflicting memory addresses evict previous set-associative data") {
+TEST_CASE("Conflicting memory addresses evict previous set-associative data", "[model][set-associative]") {
 
   // Generate an address
   auto cache = make_default_cache(CacheType::SetAssociative);

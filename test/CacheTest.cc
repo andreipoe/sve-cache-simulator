@@ -15,7 +15,7 @@ auto const CACHE_TYPES = { CacheType::Infinite, CacheType::DirectMapped,
                            CacheType::SetAssociative };
 
 
-TEST_CASE("Addresses are split correctly") {
+TEST_CASE("Addresses are split correctly", "[model][common][addresses]") {
   const CacheConfig config { CacheType::Infinite, DEFAULT_CACHE_SIZE, DEFAULT_LINE_SIZE };
 
   const unsigned int block { 32 }, index { 160 }, tag { 12 };
@@ -28,7 +28,7 @@ TEST_CASE("Addresses are split correctly") {
   REQUIRE(cache_address.tag == tag);
 }
 
-TEST_CASE("Cache stats are properly initialised") {
+TEST_CASE("Cache stats are properly initialised", "[model][common][stats]") {
   std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
 
   REQUIRE(cache->getHits() == 0);
@@ -37,7 +37,7 @@ TEST_CASE("Cache stats are properly initialised") {
   REQUIRE(cache->getEvictions() == 0);
 }
 
-TEST_CASE("Hits and misses always add up to total touches") {
+TEST_CASE("Hits and misses always add up to total touches", "[model][common][stats]") {
   const int TOUCH_COUNT { 1000 };
 
   std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
@@ -53,7 +53,7 @@ TEST_CASE("Hits and misses always add up to total touches") {
   REQUIRE(cache->getHits() + cache->getMisses() == TOUCH_COUNT);
 }
 
-TEST_CASE("First touch always misses") {
+TEST_CASE("First touch always misses", "[model][common]") {
   const uint64_t address { static_cast<uint64_t>(
       GENERATE(take(RANDOM_COUNT, random(0, DEFAULT_CACHE_SIZE)))) };
 
@@ -64,7 +64,7 @@ TEST_CASE("First touch always misses") {
   REQUIRE(cache->getMisses() == 1);
 }
 
-TEST_CASE("Second touch always hits") {
+TEST_CASE("Second touch always hits", "[model][common]") {
   const uint64_t address { static_cast<uint64_t>(
       GENERATE(take(RANDOM_COUNT, random(0, DEFAULT_CACHE_SIZE)))) };
 
@@ -77,7 +77,7 @@ TEST_CASE("Second touch always hits") {
   REQUIRE(cache->getHits() == 1);
 }
 
-TEST_CASE("Accessing an aligned value brings in a whole cache line") {
+TEST_CASE("Accessing an aligned value brings in a whole cache line", "[model][common]") {
   std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
 
   // Generate addresses that map to the first element in a cache line
@@ -100,7 +100,7 @@ TEST_CASE("Accessing an aligned value brings in a whole cache line") {
   REQUIRE(cache->getMisses() == 2);
 }
 
-TEST_CASE("Accessing an unaligned value brings in a whole cache line") {
+TEST_CASE("Accessing an unaligned value brings in a whole cache line", "[model][common]") {
   std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
 
   // Generate addresses that don't map to the first element in a cache line
@@ -127,7 +127,7 @@ TEST_CASE("Accessing an unaligned value brings in a whole cache line") {
   REQUIRE(cache->getMisses() == 2);
 }
 
-TEST_CASE("Accesses bigger than the size of a cache line touch multiple cache lines") {
+TEST_CASE("Accesses bigger than the size of a cache line touch multiple cache lines", "[model][common]") {
   std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
 
   // Generate addresses that map to the first element in a cache line

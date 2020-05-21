@@ -7,7 +7,7 @@
 
 #include "MemoryTrace.hh"
 
-TEST_CASE("Traces are loaded correctly") {
+TEST_CASE("Traces are loaded correctly", "[trace]") {
   auto filename = try_tracefile_names("traces/8.trace");
 
   std::ifstream tracefile(filename);
