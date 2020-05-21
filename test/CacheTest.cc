@@ -33,6 +33,8 @@ TEST_CASE("Cache stats are properly initialised") {
 
   REQUIRE(cache->getHits() == 0);
   REQUIRE(cache->getMisses() == 0);
+  REQUIRE(cache->getTotalAccesses() == 0);
+  REQUIRE(cache->getEvictions() == 0);
 }
 
 TEST_CASE("Hits and misses always add up to total touches") {

@@ -7,6 +7,7 @@
 
 #include "CacheConfig.hh"
 
+// TODO: add evictions, perhaps by turning this into a bitfield
 enum class CacheEvent { Hit, Miss };
 
 class Cache;
@@ -60,7 +61,7 @@ class Cache {
   /* The size of a cache set, i.e. the "number of ways" */
   const int set_size;
 
-  uint64_t hits { 0 }, misses { 0 };
+  uint64_t hits { 0 }, misses { 0 }, evictions { 0 };
 
   explicit Cache(const uint64_t size, const int line_size, const int set_size = 1);
   Cache(const CacheConfig config);
@@ -93,6 +94,7 @@ class Cache {
   uint64_t getHits() const;
   uint64_t getMisses() const;
   uint64_t getTotalAccesses() const;
+  uint64_t getEvictions() const;
 
   static std::unique_ptr<Cache> make_cache(const CacheConfig config);
 

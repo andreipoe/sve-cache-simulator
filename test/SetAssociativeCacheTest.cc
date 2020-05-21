@@ -4,7 +4,6 @@
 
 #include "utils.hh"
 
-// TODO: test evictions stats
 TEST_CASE("Conflicting memory addresses evict previous set-associative data") {
 
   // Generate an address
@@ -29,6 +28,7 @@ TEST_CASE("Conflicting memory addresses evict previous set-associative data") {
 
   REQUIRE(cache->getHits() == 0);
   REQUIRE(cache->getMisses() == 1 + DEFAULT_SET_SIZE);
+  REQUIRE(cache->getEvictions() == 1);
 }
 
 // TODO: Test ways

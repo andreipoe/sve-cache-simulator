@@ -54,6 +54,7 @@ src_test = files([
   'test/CacheConfigTest.cc',
   'test/CacheTest.cc',
   'test/DirectMappedCacheTest.cc',
+  'test/InfiniteCacheTest.cc',
   'test/MemoryTraceTest.cc',
   'test/SetAssociativeCacheTest.cc',
   'test/RandomAddressGenerator.cc',

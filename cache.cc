@@ -74,10 +74,9 @@ int Cache::getLineSize() const { return line_size; }
 int Cache::getSetSize() const { return set_size; }
 
 uint64_t Cache::getHits() const { return hits; }
-
 uint64_t Cache::getMisses() const { return misses; }
-
 uint64_t Cache::getTotalAccesses() const { return hits + misses; }
+uint64_t Cache::getEvictions() const { return evictions; }
 
 std::unique_ptr<Cache> Cache::make_cache(const CacheConfig config) {
   switch (config.type) {

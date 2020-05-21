@@ -25,6 +25,7 @@ CacheEvent SetAssociativeCache::touch(const CacheAddress& address) {
     hits++;
     return CacheEvent::Hit;
   } else {
+    if (oldest->valid) evictions++;
     misses++;
     *oldest = { address.tag };
     return CacheEvent::Miss;

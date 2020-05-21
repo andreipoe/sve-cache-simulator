@@ -12,6 +12,7 @@ CacheEvent DirectMappedCache::touch(const CacheAddress& cache_address) {
     hits++;
     event = CacheEvent::Hit;
   } else {
+    if (cached_element.valid) evictions++;
     misses++;
     event = CacheEvent::Miss;
   }

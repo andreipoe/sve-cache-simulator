@@ -27,4 +27,5 @@ TEST_CASE("Conflicting memory addresses evict previous direct-mapped data") {
   cache->touch(conflicting_address);
   REQUIRE(cache->getHits() == 0);
   REQUIRE(cache->getMisses() == 2);
+  REQUIRE(cache->getEvictions() == 1);
 }
