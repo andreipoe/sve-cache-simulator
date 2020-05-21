@@ -1,27 +1,74 @@
 image: andreipoe/buildpack-cpp:20.04
 
 stages:
-  - basic build
-  - more builds
+  - build
+  - test
 
-gcc:
-  stage: basic build
-  script:
-    - make -j COMPILER=GNU
-    - make -j COMPILER=GNU test
-    - ./test/scs-test
-
-clang:
-  stage: more builds
-  script:
-    - make -j COMPILER=CLANG
-    - make -j COMPILER=CLANG test
-    - ./test/scs-test
-
-meson:
-  stage: more builds
+# TODO: use variables and job templates
+build:meson:gcc:
+  stage: build
   script:
     - env CXX=g++ meson build-gnu
-    - cd build-gnu
-    - ninja
-    - ./scs-test
+    - ninja -C build-gnu
+  artifacts:
+    paths:
+      - build-gnu/
+    expire_in: 1 day
+
+test:meson:gcc:
+  stage: test
+  script:
+    - meson test -C build-gnu -v
+  needs:
+    - build:meson:gcc
+
+
+build:meson:clang:
+  stage: build
+  script:
+    - env CXX=clang++ meson build-clang
+    - ninja -C build-clang
+  artifacts:
+    paths:
+      - build-clang/
+    expire_in: 1 day
+
+test:meson:clang:
+  stage: test
+  script:
+    - meson test -C build-clang -v
+  needs:
+    - build:meson:clang
+
+
+build:make:gcc:
+  stage: build
+  script:
+    - make -j COMPILER=GNU
+  artifacts:
+    untracked: true
+    expire_in: 1 day
+
+test:make:gcc:
+  stage: test
+  script:
+    - make -j COMPILER=GNU test
+    - ./test/scs-test
+  needs:
+    - build:make:gcc
+
+build:make:clang:
+  stage: build
+  script:
+    - make -j COMPILER=CLANG
+  artifacts:
+    untracked: true
+    expire_in: 1 day
+
+test:make:clang:
+  stage: test
+  script:
+    - make -j COMPILER=CLANG test
+    - ./test/scs-test
+  needs:
+    - build:make:clang
