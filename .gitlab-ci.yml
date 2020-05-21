@@ -4,71 +4,81 @@ stages:
   - build
   - test
 
-# TODO: use variables and job templates
-build:meson:gcc:
+
+.build:meson:
   stage: build
   script:
-    - env CXX=g++ meson build-gnu
-    - ninja -C build-gnu
+    - meson build
+    - ninja -C build
   artifacts:
     paths:
-      - build-gnu/
+      - build
     expire_in: 1 day
 
-test:meson:gcc:
+.test:meson:
   stage: test
   script:
-    - meson test -C build-gnu -v
+    - meson test -C build -v
+
+
+build:meson:gcc:
+  extends: .build:meson
+  variables:
+    CXX: g++
+
+test:meson:gcc:
+  extends: .test:meson
   needs:
     - build:meson:gcc
 
 
 build:meson:clang:
-  stage: build
-  script:
-    - env CXX=clang++ meson build-clang
-    - ninja -C build-clang
-  artifacts:
-    paths:
-      - build-clang/
-    expire_in: 1 day
+  extends: .build:meson
+  variables:
+    CXX: clang++
 
 test:meson:clang:
-  stage: test
-  script:
-    - meson test -C build-clang -v
+  extends: .test:meson
   needs:
     - build:meson:clang
 
 
-build:make:gcc:
+.build:make:
   stage: build
   script:
-    - make -j COMPILER=GNU
+    - make -j COMPILER=$COMPILER
   artifacts:
     untracked: true
     expire_in: 1 day
 
-test:make:gcc:
+.test:make:
   stage: test
   script:
-    - make -j COMPILER=GNU test
+    - make -j COMPILER=$COMPILER test
     - ./test/scs-test
+
+
+build:make:gcc:
+  extends: .build:make
+  variables:
+    COMPILER: GNU
+
+test:make:gcc:
+  extends: .test:make
+  variables:
+    COMPILER: GNU
   needs:
     - build:make:gcc
 
+
 build:make:clang:
-  stage: build
-  script:
-    - make -j COMPILER=CLANG
-  artifacts:
-    untracked: true
-    expire_in: 1 day
+  extends: .build:make
+  variables:
+    COMPILER: CLANG
 
 test:make:clang:
-  stage: test
-  script:
-    - make -j COMPILER=CLANG test
-    - ./test/scs-test
+  extends: .test:make
+  variables:
+    COMPILER: CLANG
   needs:
     - build:make:clang
