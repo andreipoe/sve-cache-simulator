@@ -66,6 +66,7 @@ TEST_CASE("Constructed caches have parameters given in CacheConfig", "[config]")
   const CacheConfig config { CacheType::DirectMapped, size, line_size };
   const DirectMappedCache cache(config);
 
+  REQUIRE(cache.getType() == CacheType::DirectMapped);
   REQUIRE(cache.getSize() == size);
   REQUIRE(cache.getLineSize() == line_size);
 }
@@ -98,13 +99,13 @@ TEST_CASE("Constructed cache hierarchies respect parameters in ini files",
 
   REQUIRE(ch.nlevels() == 2);
 
+  REQUIRE(ch.getType(1) == CacheType::SetAssociative);
   REQUIRE(ch.getSize(1) == 4096);
   REQUIRE(ch.getLineSize(1) == 64);
   REQUIRE(ch.getSetSize(1) == 4);
 
+  REQUIRE(ch.getType(2) == CacheType::SetAssociative);
   REQUIRE(ch.getSize(2) == 32768);
   REQUIRE(ch.getLineSize(2) == 64);
   REQUIRE(ch.getSetSize(2) == 4);
 }
-
-// TODO: Stats of caches in a hierarchy are initialised properly

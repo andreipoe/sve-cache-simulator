@@ -12,22 +12,20 @@ class CacheHierarchy {
   // TODO: support inclusive and exclusive caches
 
  public:
-  CacheHierarchy(std::vector<CacheConfig> cache_configs);
+  CacheHierarchy(const std::vector<CacheConfig> cache_configs);
   CacheHierarchy(std::istream&& config_file);
 
   int nlevels() const;
 
-  // TODO: figure out a way to get the type
-  // CacheType getType() const;
+  CacheType getType(int level) const;
   int getSize(int level) const;
   int getLineSize(int level) const;
   int getSetSize(int level) const;
 
-  // TODO: implement hierarchy stats
-  // uint64_t getHits() const;
-  // uint64_t getMisses() const;
-  // uint64_t getTotalAccesses() const;
-  // uint64_t getEvictions() const;
+  uint64_t getHits(int level) const;
+  uint64_t getMisses(int level) const;
+  uint64_t getTotalAccesses(int level) const;
+  uint64_t getEvictions(int level) const;
 
   // TODO: implement hierarchy requests
 };

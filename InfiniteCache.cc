@@ -19,3 +19,5 @@ CacheEvent InfiniteCache::touch(const CacheAddress& cache_address) {
   addresses.insert(cache_address.index);
   return event;
 }
+
+CacheType InfiniteCache::getType() const { return CacheType::Infinite; }

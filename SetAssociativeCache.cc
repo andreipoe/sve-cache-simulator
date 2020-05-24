@@ -32,3 +32,4 @@ CacheEvent SetAssociativeCache::touch(const CacheAddress& address) {
   }
 }
 
+CacheType SetAssociativeCache::getType() const { return CacheType::SetAssociative; }

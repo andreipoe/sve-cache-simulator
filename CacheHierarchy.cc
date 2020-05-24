@@ -7,7 +7,7 @@
 
 #define KEY_NLEVELS "levels"
 
-CacheHierarchy::CacheHierarchy(std::vector<CacheConfig> cache_configs) {
+CacheHierarchy::CacheHierarchy(const std::vector<CacheConfig> cache_configs) {
   levels.reserve(cache_configs.size());
   for (const auto& config : cache_configs) levels.push_back(Cache::make_cache(config));
 }
@@ -43,10 +43,28 @@ CacheHierarchy::CacheHierarchy(std::istream&& config_file) {
 }
 
 int CacheHierarchy::nlevels() const { return levels.size(); }
+
+CacheType CacheHierarchy::getType(int level) const {
+  return levels[level - 1]->getType();
+}
+
 int CacheHierarchy::getSize(int level) const { return levels[level - 1]->getSize(); }
+
 int CacheHierarchy::getLineSize(int level) const {
   return levels[level - 1]->getLineSize();
 }
 int CacheHierarchy::getSetSize(int level) const {
   return levels[level - 1]->getSetSize();
+}
+
+uint64_t CacheHierarchy::getHits(int level) const { return levels[level - 1]->getHits(); }
+
+uint64_t CacheHierarchy::getMisses(int level) const {
+  return levels[level - 1]->getMisses();
+}
+uint64_t CacheHierarchy::getTotalAccesses(int level) const {
+  return levels[level - 1]->getHits() + levels[level - 1]->getMisses();
+}
+uint64_t CacheHierarchy::getEvictions(int level) const {
+  return levels[level - 1]->getEvictions();
 }

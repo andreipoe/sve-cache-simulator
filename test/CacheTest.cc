@@ -28,6 +28,13 @@ TEST_CASE("Addresses are split correctly", "[model][common][addresses]") {
   REQUIRE(cache_address.tag == tag);
 }
 
+TEST_CASE("Cache type is returned correctly", "[model][common]") {
+  const CacheType requested_type = GENERATE(values(CACHE_TYPES));
+  std::unique_ptr<Cache> cache = make_default_cache(requested_type);
+
+  REQUIRE(cache->getType() == requested_type);
+}
+
 TEST_CASE("Cache stats are properly initialised", "[model][common][stats]") {
   std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
 

@@ -1,8 +1,7 @@
 #include "DirectMappedCache.hh"
 
 DirectMappedCache::DirectMappedCache(const CacheConfig config)
-    : Cache(config), cache_lines(size / line_size, CacheEntry{}) {
-}
+    : Cache(config), cache_lines(size / line_size, CacheEntry {}) {}
 
 CacheEvent DirectMappedCache::touch(const CacheAddress& cache_address) {
   auto cached_element = cache_lines[cache_address.index];
@@ -21,3 +20,5 @@ CacheEvent DirectMappedCache::touch(const CacheAddress& cache_address) {
 
   return event;
 }
+
+CacheType DirectMappedCache::getType() const { return CacheType::DirectMapped; }

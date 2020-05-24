@@ -6,11 +6,13 @@
 
 #include "RandomAddressGenerator.hh"
 
-#include "cache.hh"
+#include "CacheHierarchy.hh"
 
 #define DEFAULT_CACHE_SIZE 32 * 1024
 #define DEFAULT_LINE_SIZE  64
 #define DEFAULT_SET_SIZE   4
+
+#define DEFAULT_HIERARCHY_SIZE 2
 
 constexpr unsigned int nbits(const uint64_t n) { return n == 1 ? 0 : 1 + nbits(n >> 1); }
 
@@ -43,3 +45,6 @@ CacheConfig get_default_cache_config(CacheType type);
 
 /* Create a cache of the specified type, using the default testing parameters */
 std::unique_ptr<Cache> make_default_cache(CacheType type);
+
+/* Create a cache hierarchy cache of the specified type, using the default testing parameters */
+std::unique_ptr<CacheHierarchy> make_default_hierarchy(CacheType type);

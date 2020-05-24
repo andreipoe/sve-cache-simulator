@@ -8,6 +8,7 @@
 #include "CacheConfig.hh"
 
 // TODO: add evictions, perhaps by turning this into a bitfield
+// TODO: alternatively, remove `CacheEvent` altogther
 enum class CacheEvent { Hit, Miss };
 
 class Cache;
@@ -96,6 +97,7 @@ class Cache {
   virtual int getSize() const final;
   virtual int getLineSize() const final;
   virtual int getSetSize() const final;
+  virtual CacheType getType() const = 0;
 
   uint64_t getHits() const;
   uint64_t getMisses() const;

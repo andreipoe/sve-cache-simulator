@@ -31,4 +31,4 @@ TEST_CASE("Conflicting memory addresses evict previous set-associative data", "[
   REQUIRE(cache->getEvictions() == 1);
 }
 
-// TODO: Test ways
+// TODO: Test different numbers of ways work as expected
