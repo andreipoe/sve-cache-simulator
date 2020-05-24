@@ -31,7 +31,7 @@ if build_type == 'release'
 endif
   endif
 elif build_type == 'debug' and meson.get_compiler('cpp').get_id() == 'gcc'
-  cpp_args += ['-Og', '-g3']
+  cpp_args += ['-g3']
   link_args += ['-g3']
 endif
 
