@@ -34,7 +34,7 @@ namespace random_address {
 RandomAddressGenerator generator {};
 }  // namespace random_address
 
-// TODO: this should probably be seeded
+// TODO: This random generator is not seeded
 uint64_t get_random_address() {
   using namespace random_address;
   generator.next();
@@ -62,4 +62,9 @@ CacheConfig get_default_cache_config(CacheType type) {
 
 std::unique_ptr<Cache> make_default_cache(CacheType type) {
   return Cache::make_cache(get_default_cache_config(type));
+}
+
+std::unique_ptr<CacheHierarchy> make_default_hierarchy(CacheType type) {
+  const std::vector<CacheConfig> configs(DEFAULT_HIERARCHY_SIZE, get_default_cache_config(type));
+  return std::make_unique<CacheHierarchy>(configs);
 }

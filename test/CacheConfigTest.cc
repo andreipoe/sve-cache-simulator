@@ -1,6 +1,7 @@
 #include "catch.hpp"
 
 #include <fstream>
+#include <sstream>
 #include <typeinfo>
 
 #include "utils.hh"
@@ -72,10 +73,22 @@ TEST_CASE("Constructed caches have parameters given in CacheConfig", "[config]")
 // TODO: Config files with a single level don't produce a hierarchy
 // TEST_CASE("Config files with a single-level hierarchy produce a single cache",
 // "[config]") {
+// TODO: but throw if the section names aren't right
 // }
 
-// TODO: Attempting to construct a single cache from a multi-level hierarchy configuration
-// throws
+TEST_CASE(
+    "Attempting to construct a single cache from a multi-level hierarchy configuration "
+    "throws",
+    "[config]") {
+  const auto filename = try_configfile_names("assoc-4+32KB.ini");
+  REQUIRE_THROWS_AS(CacheConfig { std::ifstream { filename } }, std::invalid_argument);
+
+  using Catch::Matchers::StartsWith;
+
+  std::istringstream too_many_levels("[hierarchy]\nlevels = 2\n\n[level1]\nsize = 15");
+  REQUIRE_THROWS_WITH(CacheConfig(std::move(too_many_levels)),
+                      StartsWith("Too many levels for a single cache"));
+}
 
 
 TEST_CASE("Constructed cache hierarchies respect parameters in ini files",

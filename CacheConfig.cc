@@ -29,7 +29,7 @@ CacheConfig::CacheConfig(std::istream&& config_file) {
                                     section.first);
 
     try {
-      const int nlevels = std::stoi(ini.sections.at("hierarchy").at("nlevels"));
+      const int nlevels = std::stoi(ini.sections.at("hierarchy").at("levels"));
       if (nlevels != 1)
         throw std::invalid_argument("Too many levels for a single cache: " +
                                     std::to_string(nlevels));
