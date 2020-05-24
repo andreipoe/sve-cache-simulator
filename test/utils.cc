@@ -55,7 +55,11 @@ std::vector<uint64_t> get_random_unique_addresses(int n, uint64_t except) {
   return std::vector(addresses.begin(), addresses.end());
 }
 
-std::unique_ptr<Cache> make_default_cache(CacheType type) {
+CacheConfig get_default_cache_config(CacheType type) {
   int set_size = type == CacheType::SetAssociative ? DEFAULT_SET_SIZE : 1;
-  return Cache::make_cache({ type, DEFAULT_CACHE_SIZE, DEFAULT_LINE_SIZE, set_size });
+  return { type, DEFAULT_CACHE_SIZE, DEFAULT_LINE_SIZE, set_size };
+}
+
+std::unique_ptr<Cache> make_default_cache(CacheType type) {
+  return Cache::make_cache(get_default_cache_config(type));
 }

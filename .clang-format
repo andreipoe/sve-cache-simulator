@@ -6,7 +6,7 @@ Standard: C++11
 
 AlignConsecutiveAssignments: true
 AlignConsecutiveMacros: true
-AllowShortLoopsOnASingleLine: false
+# AllowShortLoopsOnASingleLine: false
 ColumnLimit: 90
 Cpp11BracedListStyle: false
 IncludeBlocks: "Preserve"

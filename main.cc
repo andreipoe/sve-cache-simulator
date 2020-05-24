@@ -9,8 +9,8 @@
 #include "CacheConfig.hh"
 #include "DirectMappedCache.hh"
 #include "InfiniteCache.hh"
-#include "SetAssociativeCache.hh"
 #include "MemoryTrace.hh"
+#include "SetAssociativeCache.hh"
 
 void run_and_print_stats(MemoryTrace const& trace, Cache& cache) {
   auto addresses = trace.getRequestAddresses();
@@ -20,10 +20,10 @@ void run_and_print_stats(MemoryTrace const& trace, Cache& cache) {
   std::cout << "Trace has " << trace.getLength() << " entries.\n";
   std::cout << "Seen " << unique_addresses.size() << " unique addresses.\n\n";
 
-  auto hits = cache.getHits();
-  auto misses = cache.getMisses();
-  auto total = cache.getTotalAccesses();
-  auto pct_hits = (static_cast<double>(hits) / total) * 100.0;
+  auto hits       = cache.getHits();
+  auto misses     = cache.getMisses();
+  auto total      = cache.getTotalAccesses();
+  auto pct_hits   = (static_cast<double>(hits) / total) * 100.0;
   auto pct_misses = 100.0 - pct_hits;
   std::cout << "Total accesses: " << total << "\n";
   std::cout << "Hits: " << hits << " (" << std::fixed << std::setprecision(2) << pct_hits
@@ -58,6 +58,8 @@ int main(int argc, char* argv[]) {
   CacheConfig sa_config(CacheType::SetAssociative, 32768, 64, 4);
   SetAssociativeCache set_associative_cache(sa_config);
   run_and_print_stats(trace, set_associative_cache);
+
+  // TODO: run a TX2 configuration
 
   return 0;
 }

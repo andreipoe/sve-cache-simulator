@@ -38,5 +38,8 @@ uint64_t get_random_address();
 /* Generate a set of unique random address */
 std::vector<uint64_t> get_random_unique_addresses(int n, uint64_t except = 0);
 
+/* Get the config for the specified cache type, using the default testing parameters */
+CacheConfig get_default_cache_config(CacheType type);
+
 /* Create a cache of the specified type, using the default testing parameters */
 std::unique_ptr<Cache> make_default_cache(CacheType type);

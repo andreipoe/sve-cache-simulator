@@ -50,6 +50,12 @@ class NotImplementedException : public std::logic_error {
   NotImplementedException();
 };
 
+/* An exception signaling a problem with a configuration file */
+class ConfigException : public std::logic_error {
+ public:
+  ConfigException();
+};
+
 class Cache {
  protected:
   /* The total size of the cache, in bytes */

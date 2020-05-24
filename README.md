@@ -70,3 +70,53 @@ Tests are implemented using Catch2, and the tests executable is the one generate
 make test
 scs-test
 ```
+
+## Configuration files
+
+Cache configurations are read from ini files.
+Some examples are provided in the `configs` folder.
+
+### Defining a single cache
+
+To define a single cache, don't use any sections in the ini file and define the parameters directly:
+
+```ini
+type = set_associative
+cache_size = 32768
+line_size = 64
+set_size = 4
+```
+
+Alternatively, define it as a hierarchy with a single level:
+
+```ini
+[hierarchy]
+levels = 1
+
+[level1]
+type = set_associative
+cache_size = 32768
+line_size = 64
+set_size = 4
+```
+
+### Defining a cache hierarchy
+
+To define a hierarchy, first define the number of levels, then define the parameters for each level in a separate section named `level<level-numer>`:
+
+```ini
+[hierarchy]
+levels = 2
+
+[level1]
+type = set_associative
+cache_size = 4096
+line_size = 64
+set_size = 4
+
+[level2]
+type = set_associative
+cache_size = 32768
+line_size = 64
+set_size = 4
+```

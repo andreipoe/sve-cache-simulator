@@ -1,6 +1,10 @@
 #pragma once
 
 #include <iostream>
+#include <map>
+#include <string>
+
+using ConfigMap = std::map<std::string, std::string>;
 
 enum class CacheType { Infinite, DirectMapped, SetAssociative };
 
@@ -16,6 +20,16 @@ struct CacheConfig {
   /* The size of a cache set, i.e. the "number of ways" */
   int set_size;
 
-  CacheConfig(const CacheType type, const int size, const int line_size, const int set_size = 1);
+  CacheConfig(const CacheType type, const int size, const int line_size,
+              const int set_size = 1);
+
+  /* Construct a `CacheConfig` from a configuration file */
   CacheConfig(std::istream&& config_file);
+
+  /* Construct a `CacheConfig` from a parameter mapping, as it would appear in a config
+   * file */
+  CacheConfig(ConfigMap config_map);
+
+ private:
+  void read_config_map_(ConfigMap config_map);
 };

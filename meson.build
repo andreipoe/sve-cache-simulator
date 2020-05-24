@@ -40,6 +40,7 @@ endif
 src_common = files([
   'cache.cc',
   'CacheConfig.cc',
+  'CacheHierarchy.cc',
   'DirectMappedCache.cc',
   'InfiniteCache.cc',
   'MemoryTrace.cc',
@@ -53,6 +54,7 @@ main_exe = executable('scs', src_common + src_main, cpp_args: cpp_args, link_arg
 src_test = files([
   'test/CacheConfigTest.cc',
   'test/CacheTest.cc',
+  'test/CacheHierarchyTest.cc',
   'test/DirectMappedCacheTest.cc',
   'test/InfiniteCacheTest.cc',
   'test/MemoryTraceTest.cc',
