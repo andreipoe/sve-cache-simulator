@@ -1,16 +1,16 @@
 #include "SetAssociativeCache.hh"
 
 SetAssociativeCache::SetAssociativeCache(const CacheConfig config)
-    : Cache(config),
-      cache_sets(size / (line_size * set_size)) {
+    : Cache(config), cache_sets(size / (line_size * set_size)) {
 
   for (size_t i = 0; i < cache_sets.size(); i++)
-    cache_sets[i] = std::vector<CacheEntry>(set_size, CacheEntry{});
+    cache_sets[i] = std::vector<CacheEntry>(set_size, CacheEntry {});
 }
 
-CacheEvent SetAssociativeCache::touch(const CacheAddress& address) {
+CacheEvents SetAssociativeCache::touch(const CacheAddress& address) {
   uint64_t max_age { 0 };
   CacheEntry *hit { nullptr }, *oldest { nullptr };
+  CacheEvents events {};
 
   for (CacheEntry& cache_line : cache_sets[address.index]) {
     cache_line.age += 1;
@@ -23,13 +23,18 @@ CacheEvent SetAssociativeCache::touch(const CacheAddress& address) {
 
   if (hit) {
     hits++;
-    return CacheEvent::Hit;
+    events.hits++;
   } else {
-    if (oldest->valid) evictions++;
+    if (oldest->valid) {
+      evictions++;
+      events.evictions++;
+    }
     misses++;
+    events.misses++;
     *oldest = { address.tag };
-    return CacheEvent::Miss;
   }
+
+  return events;
 }
 
 CacheType SetAssociativeCache::getType() const { return CacheType::SetAssociative; }

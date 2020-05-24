@@ -10,6 +10,18 @@ static constexpr unsigned int nbits(const uint64_t n) {
 
 // ------
 
+CacheEvents& CacheEvents::operator+=(const CacheEvents& rhs) {
+  this->hits += rhs.hits;
+  this->misses += rhs.misses;
+  this->evictions += rhs.evictions;
+
+  return *this;
+}
+
+bool CacheEvents::hit() const { return misses == 0; }
+
+// ------
+
 CacheAddress::CacheAddress(uint64_t address, uint64_t cache_size, int line_size,
                            int set_size) {
   const unsigned int block_bits { nbits(line_size) };
@@ -52,28 +64,35 @@ const CacheAddress Cache::split_address(const uint64_t address) const {
   return CacheAddress(address, *this);
 }
 
-void Cache::touch(const uint64_t address, const int size) {
+CacheEvents Cache::touch(const uint64_t address, const int size) {
+  CacheEvents events {};
   uint64_t next_address { address };
   int remaining_size { size };
 
   while (remaining_size > 0) {
     // Find the first cache line this request touches
     auto const& cache_address = split_address(next_address);
-    touch(cache_address);
+    events += touch(cache_address);
 
     // Skip over the remaining bytes in this same cache line
     const unsigned int covered_bytes = line_size - cache_address.block;
     remaining_size -= covered_bytes;
     next_address += covered_bytes;
   }
+
+  return events;
 }
 
-void Cache::touch(const std::vector<uint64_t> addresses) {
-  for (auto const& a : addresses) touch(a);
+CacheEvents Cache::touch(const std::vector<uint64_t> addresses) {
+  CacheEvents events {};
+  for (auto const& a : addresses) events += touch(a);
+  return events;
 }
 
-void Cache::touch(const std::vector<CacheAddress> addresses) {
-  for (auto const& a : addresses) touch(a);
+CacheEvents Cache::touch(const std::vector<CacheAddress> addresses) {
+  CacheEvents events {};
+  for (auto const& a : addresses) events += touch(a);
+  return events;
 }
 
 uint64_t Cache::getSize() const { return size; }

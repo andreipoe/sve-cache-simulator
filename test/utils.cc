@@ -65,6 +65,10 @@ std::unique_ptr<Cache> make_default_cache(CacheType type) {
 }
 
 std::unique_ptr<CacheHierarchy> make_default_hierarchy(CacheType type) {
-  const std::vector<CacheConfig> configs(DEFAULT_HIERARCHY_SIZE, get_default_cache_config(type));
+  std::vector<CacheConfig> configs(DEFAULT_HIERARCHY_SIZE, get_default_cache_config(type));
+  for(int level = DEFAULT_HIERARCHY_SIZE - 1; level >= 0; level--)
+    configs[level].size /= (DEFAULT_HIERARCHY_SIZE - level);
+
+
   return std::make_unique<CacheHierarchy>(configs);
 }

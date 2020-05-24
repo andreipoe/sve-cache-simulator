@@ -27,5 +27,13 @@ class CacheHierarchy {
   uint64_t getTotalAccesses(int level) const;
   uint64_t getEvictions(int level) const;
 
-  // TODO: implement hierarchy requests
+  // TODO: return events here, if useful
+  /* Run a single request through the cache hierarchy */
+  void touch(uint64_t address, int size = 1);
+
+  /* Run a sequence of addresses through the cache hierarchy,
+   * assuming the access doesn't cross cache-line boundaries */
+  void touch(const std::vector<uint64_t> addresses);
+
+  // TODO: support multiple access sizes
 };

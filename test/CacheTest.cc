@@ -82,7 +82,7 @@ TEST_CASE("Hits and misses always add up to total touches", "[model][common][sta
   REQUIRE(cache->getHits() + cache->getMisses() == TOUCH_COUNT);
 }
 
-TEST_CASE("First touch always misses", "[model][common]") {
+TEST_CASE("First cache touch always misses", "[model][common]") {
   const uint64_t address { static_cast<uint64_t>(
       GENERATE(take(RANDOM_COUNT, random(0, DEFAULT_CACHE_SIZE)))) };
 
@@ -93,7 +93,7 @@ TEST_CASE("First touch always misses", "[model][common]") {
   REQUIRE(cache->getMisses() == 1);
 }
 
-TEST_CASE("Second touch always hits", "[model][common]") {
+TEST_CASE("Second cache touch always hits", "[model][common]") {
   const uint64_t address { static_cast<uint64_t>(
       GENERATE(take(RANDOM_COUNT, random(0, DEFAULT_CACHE_SIZE)))) };
 

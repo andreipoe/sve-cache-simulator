@@ -7,9 +7,22 @@
 
 #include "CacheConfig.hh"
 
-// TODO: add evictions, perhaps by turning this into a bitfield
-// TODO: alternatively, remove `CacheEvent` altogther
-enum class CacheEvent { Hit, Miss };
+struct CacheEvents {
+  uint64_t hits { 0 }, misses { 0 }, evictions { 0 };
+
+  /* Returns true if all events counted are hits */
+  bool hit() const;
+
+  friend CacheEvents operator+(CacheEvents lhs, const CacheEvents& rhs) {
+    lhs.hits += rhs.hits;
+    lhs.misses += rhs.misses;
+    lhs.evictions += rhs.evictions;
+
+    return lhs;
+  }
+
+  CacheEvents& operator+=(const CacheEvents& rhs);
+};
 
 class Cache;
 
@@ -78,21 +91,18 @@ class Cache {
 
   /* Run a single address through the cache,
    * assuming the access doesn't cross cache-line boundaries */
-  virtual CacheEvent touch(const CacheAddress& address) = 0;
+  virtual CacheEvents touch(const CacheAddress& address) = 0;
 
-  // TODO: return the cache events
   /* Run a single request through the cache */
-  virtual void touch(const uint64_t address, const int size = 1) final;
+  virtual CacheEvents touch(const uint64_t address, const int size = 1) final;
 
-  // TODO: return the cache events
   /* Run a sequence of addresses through the cache,
    * assuming the access doesn't cross cache-line boundaries */
-  virtual void touch(const std::vector<uint64_t> addresses) final;
+  virtual CacheEvents touch(const std::vector<uint64_t> addresses) final;
 
-  // TODO: return the cache events
   /* Run a sequence of addresses through the cache,
    * assuming the access doesn't cross cache-line boundaries */
-  virtual void touch(const std::vector<CacheAddress> addresses) final;
+  virtual CacheEvents touch(const std::vector<CacheAddress> addresses) final;
 
   virtual uint64_t getSize() const final;
   virtual int getLineSize() const final;
@@ -104,7 +114,10 @@ class Cache {
   uint64_t getTotalAccesses() const;
   uint64_t getEvictions() const;
 
+  /* Factory method for creating caches based on the given configuration */
   static std::unique_ptr<Cache> make_cache(const CacheConfig config);
 
+  /* Split a raw address into a tag, a set, a line, and a block, as mapped by this cache
+   */
   virtual const CacheAddress split_address(const uint64_t address) const final;
 };

@@ -11,6 +11,6 @@ class InfiniteCache : public Cache {
   InfiniteCache();
 
   using Cache::touch;
-  virtual CacheEvent touch(const CacheAddress& address) override;
+  virtual CacheEvents touch(const CacheAddress& address) override;
   virtual CacheType getType() const override;
 };
