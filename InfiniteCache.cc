@@ -1,8 +1,6 @@
 #include "InfiniteCache.hh"
 
-#include <limits>
-
-InfiniteCache::InfiniteCache() : Cache(std::numeric_limits<uint64_t>::max(), 64) {}
+InfiniteCache::InfiniteCache() : Cache(static_cast<uint64_t>(1) << 48, 64) {}
 
 CacheEvent InfiniteCache::touch(const CacheAddress& cache_address) {
   auto cached_element = addresses.find(cache_address.index);

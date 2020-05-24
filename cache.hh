@@ -94,7 +94,7 @@ class Cache {
    * assuming the access doesn't cross cache-line boundaries */
   virtual void touch(const std::vector<CacheAddress> addresses) final;
 
-  virtual int getSize() const final;
+  virtual uint64_t getSize() const final;
   virtual int getLineSize() const final;
   virtual int getSetSize() const final;
   virtual CacheType getType() const = 0;

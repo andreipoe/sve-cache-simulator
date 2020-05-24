@@ -13,7 +13,8 @@ static constexpr unsigned int nbits(const uint64_t n) {
 CacheAddress::CacheAddress(uint64_t address, uint64_t cache_size, int line_size,
                            int set_size) {
   const unsigned int block_bits { nbits(line_size) };
-  const unsigned int index_bits { nbits(cache_size) - nbits(line_size) - nbits(set_size) };
+  const unsigned int index_bits { nbits(cache_size) - nbits(line_size) -
+                                  nbits(set_size) };
 
   block = address & ((1 << block_bits) - 1);
   index = (address >> block_bits) & ((1 << index_bits) - 1);
@@ -33,9 +34,17 @@ CacheEntry::CacheEntry(uint64_t tag) : tag(tag), valid(true) {}
 // ------
 
 Cache::Cache(const uint64_t size, const int line_size, const int set_size)
-    : size(size), line_size(line_size), set_size(set_size) {}
+    : size(size), line_size(line_size), set_size(set_size) {
+  if (size % line_size != 0)
+    throw std::invalid_argument("Line size does not divide cache size");
+  if (size % set_size != 0)
+    throw std::invalid_argument("Set size does not divide cache size");
+  if ((size & (size - 1)) != 0)
+    throw std::invalid_argument("Cache size is not a power of 2");
+}
 
-Cache::Cache(const CacheConfig config) : size(config.size), line_size(config.line_size), set_size(config.set_size) {}
+Cache::Cache(const CacheConfig config)
+    : Cache(config.size, config.line_size, config.set_size) {}
 
 Cache::~Cache() {}
 
@@ -60,16 +69,14 @@ void Cache::touch(const uint64_t address, const int size) {
 }
 
 void Cache::touch(const std::vector<uint64_t> addresses) {
-  for (auto const& a : addresses)
-    touch(a);
+  for (auto const& a : addresses) touch(a);
 }
 
 void Cache::touch(const std::vector<CacheAddress> addresses) {
-  for (auto const& a : addresses)
-    touch(a);
+  for (auto const& a : addresses) touch(a);
 }
 
-int Cache::getSize() const { return size; }
+uint64_t Cache::getSize() const { return size; }
 int Cache::getLineSize() const { return line_size; }
 int Cache::getSetSize() const { return set_size; }
 

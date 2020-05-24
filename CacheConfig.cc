@@ -4,7 +4,7 @@
 
 #include "inipp.h"
 
-CacheConfig::CacheConfig(const CacheType type, const int size, const int line_size,
+CacheConfig::CacheConfig(const CacheType type, const uint64_t size, const int line_size,
                          const int set_size)
     : type(type), size(size), line_size(line_size), set_size(set_size) {}
 

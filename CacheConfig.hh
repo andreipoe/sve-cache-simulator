@@ -12,7 +12,7 @@ struct CacheConfig {
   CacheType type;
 
   /* Total size in bytes */
-  int size;
+  uint64_t size;
 
   /* Cache line size in bytes */
   int line_size;
@@ -20,7 +20,7 @@ struct CacheConfig {
   /* The size of a cache set, i.e. the "number of ways" */
   int set_size;
 
-  CacheConfig(const CacheType type, const int size, const int line_size,
+  CacheConfig(const CacheType type, const uint64_t size, const int line_size,
               const int set_size = 1);
 
   /* Construct a `CacheConfig` from a configuration file */

@@ -1,6 +1,5 @@
 #include "catch.hpp"
 
-#include <limits>
 #include <vector>
 
 #include "utils.hh"
@@ -30,7 +29,7 @@ TEST_CASE("Addresses are split correctly", "[model][common][addresses]") {
 
 TEST_CASE("Cache type is returned correctly", "[model][common]") {
   const CacheType requested_type = GENERATE(values(CACHE_TYPES));
-  std::unique_ptr<Cache> cache = make_default_cache(requested_type);
+  std::unique_ptr<Cache> cache   = make_default_cache(requested_type);
 
   REQUIRE(cache->getType() == requested_type);
 }
@@ -44,17 +43,40 @@ TEST_CASE("Cache stats are properly initialised", "[model][common][stats]") {
   REQUIRE(cache->getEvictions() == 0);
 }
 
+TEST_CASE("Constructing caches with non-power-of-2 sizes doesn't work",
+          "[model][common]") {
+  const auto type = GENERATE(values(CACHE_TYPES));
+
+  SECTION("Non-power-of-2 total size is not admissible") {
+    if (type == CacheType::Infinite) return;  // Infinite caches ignore size
+
+    const uint64_t size = GENERATE(
+        take(RANDOM_COUNT, filter([](uint64_t n) { return n % 2 != 0; },
+                                  random<uint64_t>(0, static_cast<uint64_t>(1) << 48))));
+    const CacheConfig config { type, size, 1 };
+
+    REQUIRE_THROWS_WITH(Cache::make_cache(config), "Cache size is not a power of 2");
+  }
+  SECTION("Line size must divide total cache size") {
+    const int line_size = GENERATE(
+        take(RANDOM_COUNT, filter([](int n) { return n % DEFAULT_CACHE_SIZE != 0; },
+                                  random(0, DEFAULT_CACHE_SIZE))));
+    const CacheConfig config { type, DEFAULT_CACHE_SIZE, line_size };
+
+    REQUIRE_THROWS_WITH(Cache::make_cache(config),
+                        "Line size does not divide cache size");
+  }
+}
+
 TEST_CASE("Hits and misses always add up to total touches", "[model][common][stats]") {
   const int TOUCH_COUNT { 1000 };
 
   std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
 
   const auto& addresses = GENERATE(
-      take(1, chunk(TOUCH_COUNT,
-                    random(0, static_cast<int>(std::numeric_limits<uint64_t>::max())))));
+      take(1, chunk(TOUCH_COUNT, random<uint64_t>(0, static_cast<uint64_t>(1) << 48))));
 
-  for (auto address : addresses)
-    cache->touch(address);
+  for (auto address : addresses) cache->touch(address);
 
   REQUIRE(cache->getTotalAccesses() == TOUCH_COUNT);
   REQUIRE(cache->getHits() + cache->getMisses() == TOUCH_COUNT);
@@ -107,7 +129,8 @@ TEST_CASE("Accessing an aligned value brings in a whole cache line", "[model][co
   REQUIRE(cache->getMisses() == 2);
 }
 
-TEST_CASE("Accessing an unaligned value brings in a whole cache line", "[model][common]") {
+TEST_CASE("Accessing an unaligned value brings in a whole cache line",
+          "[model][common]") {
   std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
 
   // Generate addresses that don't map to the first element in a cache line
@@ -134,7 +157,8 @@ TEST_CASE("Accessing an unaligned value brings in a whole cache line", "[model][
   REQUIRE(cache->getMisses() == 2);
 }
 
-TEST_CASE("Accesses bigger than the size of a cache line touch multiple cache lines", "[model][common]") {
+TEST_CASE("Accesses bigger than the size of a cache line touch multiple cache lines",
+          "[model][common]") {
   std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
 
   // Generate addresses that map to the first element in a cache line
