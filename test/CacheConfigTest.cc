@@ -11,6 +11,8 @@
 #include "DirectMappedCache.hh"
 #include "InfiniteCache.hh"
 
+using Catch::Matchers::StartsWith;
+
 TEST_CASE("Reading cache configuration from ini files works", "[config][params]") {
   std::string filename;
   CacheType expected_type;
@@ -71,11 +73,24 @@ TEST_CASE("Constructed caches have parameters given in CacheConfig", "[config]")
   REQUIRE(cache.getLineSize() == line_size);
 }
 
-// TODO: Config files with a single level don't produce a hierarchy
-// TEST_CASE("Config files with a single-level hierarchy produce a single cache",
-// "[config]") {
-// TODO: but throw if the section names aren't right
-// }
+TEST_CASE("Config files with a single-level hierarchy produce a single cache",
+          "[config]") {
+  const std::string header = "[hierarchy]\nlevels = 1\n\n";
+  const std::string params =
+      "type = direct_mapped\n"
+      "cache_size = 1024\n"
+      "line_size = 64";
+
+  SECTION("...if the section is called level1") {
+    REQUIRE_NOTHROW(
+        CacheConfig { std::istringstream { header + "[level1]\n" + params } });
+  }
+  SECTION("...unless the section is named incorrectly") {
+    REQUIRE_THROWS_WITH(
+        CacheConfig { std::istringstream { header + "[cache]\n" + params } },
+        StartsWith("Invalid section in cache config file:"));
+  }
+}
 
 TEST_CASE(
     "Attempting to construct a single cache from a multi-level hierarchy configuration "
@@ -84,9 +99,7 @@ TEST_CASE(
   const auto filename = try_configfile_names("assoc-4+32KB.ini");
   REQUIRE_THROWS_AS(CacheConfig { std::ifstream { filename } }, std::invalid_argument);
 
-  using Catch::Matchers::StartsWith;
-
-  std::istringstream too_many_levels("[hierarchy]\nlevels = 2\n\n[level1]\nsize = 15");
+  std::istringstream too_many_levels("[hierarchy]\nlevels = 2\n\n[level1]\nsize = 64");
   REQUIRE_THROWS_WITH(CacheConfig(std::move(too_many_levels)),
                       StartsWith("Too many levels for a single cache"));
 }
