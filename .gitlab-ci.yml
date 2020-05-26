@@ -18,7 +18,8 @@ stages:
 .test:meson:
   stage: test
   script:
-    - meson test -C build -v
+    - cd build
+    - ./scs-test
 
 
 build:meson:gcc:
@@ -54,6 +55,7 @@ test:meson:clang:
 .test:make:
   stage: test
   script:
+    - touch *.o # Otherwise base objects will be rebuilt, too
     - make -j COMPILER=$COMPILER test
     - ./test/scs-test
 
