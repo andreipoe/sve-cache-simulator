@@ -137,3 +137,15 @@ TEST_CASE("Levels in a hierarchy hit and miss as expected", "[hierarchy]") {
     REQUIRE(ch.getHits(level) == hits[level]);
   }
 }
+
+TEST_CASE("Sized access touched the correct number of cache lines thorough a hierarchy",
+          "[hierarchy]") {
+  const int lines_touched = GENERATE(range(1, 5));
+  auto ch                 = make_default_hierarchy(CacheType::SetAssociative);
+
+  const SizedAccess access = { 0, lines_touched * ch->getLineSize(1) };
+  ch->touch(access);
+
+  REQUIRE(ch->getMisses(1) == static_cast<uint64_t>(lines_touched));
+  REQUIRE(ch->getHits(1) == 0);
+}

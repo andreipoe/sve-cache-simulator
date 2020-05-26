@@ -24,6 +24,12 @@ struct CacheEvents {
   CacheEvents& operator+=(const CacheEvents& rhs);
 };
 
+/* A tuple holding a memory address to be accessed and the size of the access */
+struct SizedAccess {
+  uint64_t address;
+  int size;
+};
+
 class Cache;
 
 /* A memory address split into the cache indexing components */
@@ -96,13 +102,19 @@ class Cache {
   /* Run a single request through the cache */
   virtual CacheEvents touch(const uint64_t address, const int size = 1) final;
 
+  /* Run a single request through the cache */
+  virtual CacheEvents touch(const SizedAccess access) final;
+
   /* Run a sequence of addresses through the cache,
    * assuming the access doesn't cross cache-line boundaries */
   virtual CacheEvents touch(const std::vector<uint64_t> addresses) final;
 
-  /* Run a sequence of addresses through the cache,
-   * assuming the access doesn't cross cache-line boundaries */
+  /* Run a sequence of addresses that don't cross cache-line boundaries through the cache
+   */
   virtual CacheEvents touch(const std::vector<CacheAddress> addresses) final;
+
+  /* Run a sequence of acceesses through the cache */
+  virtual CacheEvents touch(const std::vector<SizedAccess> accesses) final;
 
   virtual uint64_t getSize() const final;
   virtual int getLineSize() const final;

@@ -111,6 +111,12 @@ void CacheHierarchy::touch(uint64_t address, int size) {
   }
 }
 
+void CacheHierarchy::touch(SizedAccess access) { touch(access.address, access.size); }
+
 void CacheHierarchy::touch(const std::vector<uint64_t> addresses) {
   for (auto const& a : addresses) touch(a);
+}
+
+void CacheHierarchy::touch(const std::vector<SizedAccess> accesses) {
+  for (auto const& a : accesses) touch(a);
 }

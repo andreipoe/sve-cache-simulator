@@ -180,3 +180,14 @@ TEST_CASE("Accesses bigger than the size of a cache line touch multiple cache li
   REQUIRE(cache->getHits() == n_lines);
   REQUIRE(cache->getMisses() == n_lines + 1);
 }
+
+TEST_CASE("Sized access touched the correct number of cache lines", "[model][common]") {
+  const int lines_touched      = GENERATE(range(1, 5));
+  std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
+
+  const SizedAccess access = { 0, lines_touched * cache->getLineSize() };
+  cache->touch(access);
+
+  REQUIRE(cache->getMisses() == lines_touched);
+  REQUIRE(cache->getHits() == 0);
+}

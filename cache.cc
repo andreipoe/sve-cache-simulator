@@ -83,6 +83,10 @@ CacheEvents Cache::touch(const uint64_t address, const int size) {
   return events;
 }
 
+CacheEvents Cache::touch(const SizedAccess access) {
+  return touch(access.address, access.size);
+}
+
 CacheEvents Cache::touch(const std::vector<uint64_t> addresses) {
   CacheEvents events {};
   for (auto const& a : addresses) events += touch(a);
@@ -92,6 +96,12 @@ CacheEvents Cache::touch(const std::vector<uint64_t> addresses) {
 CacheEvents Cache::touch(const std::vector<CacheAddress> addresses) {
   CacheEvents events {};
   for (auto const& a : addresses) events += touch(a);
+  return events;
+}
+
+CacheEvents Cache::touch(const std::vector<SizedAccess> accesses) {
+  CacheEvents events {};
+  for (auto const& a : accesses) events += touch(a);
   return events;
 }
 
