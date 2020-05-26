@@ -55,20 +55,85 @@ TEST_CASE("First hierarchy touch always misses all levels", "[hierarchy]") {
   }
 }
 
-TEST_CASE("Second hierarchy touch always hits all levels", "[hierarchy]") {
+TEST_CASE("Second hierarchy touch always hits first level", "[hierarchy]") {
   const auto ch = make_default_hierarchy(CacheType::SetAssociative);
 
   const uint64_t address = GENERATE(take(DEFAULT_RANDOM_COUNT, random_addresses()));
 
   ch->touch(address);  // all miss
-  ch->touch(address);  // hit on LLC
+  ch->touch(address);  // hit on L1
 
   for (int level = 1; level <= DEFAULT_HIERARCHY_SIZE; level++)
     REQUIRE(ch->getMisses(level) == 1);
 
-  REQUIRE(ch->getHits(ch->nlevels()) == 1);
-  for (int level = 1; level <= DEFAULT_HIERARCHY_SIZE - 1; level++)
+  REQUIRE(ch->getHits(1) == 1);
+  for (int level = 2; level <= DEFAULT_HIERARCHY_SIZE; level++)
     REQUIRE(ch->getHits(level) == 0);
 }
 
-// TODO: tests accesses that only miss some levels
+TEST_CASE("Levels in a hierarchy hit and miss as expected", "[hierarchy]") {
+  const int hierarchy_size { 3 };
+  const int size_per_level { 1024 };
+
+  std::vector<CacheConfig> configs(hierarchy_size,
+                                   get_default_cache_config(CacheType::DirectMapped));
+  for (int level = 0; level < hierarchy_size; level++)
+    configs[level].size = size_per_level * (1 << level);
+
+  CacheHierarchy ch { configs };
+  const uint64_t line_size = configs[0].line_size;
+  const uint64_t touches_per_level { size_per_level / line_size };
+
+  std::array<uint64_t, hierarchy_size + 1> misses { 0, 0, 0, 0 };
+  std::array<uint64_t, hierarchy_size + 1> hits { 0, 0, 0, 0 };
+
+  // Fill up L1 (all misses)
+  for (uint64_t a = 0; a < size_per_level; a += line_size) ch.touch(a);
+
+  for (int level = 1; level <= hierarchy_size; level++) {
+    misses[level] = touches_per_level;
+    REQUIRE(ch.getMisses(level) == misses[level]);
+    REQUIRE(ch.getHits(level) == hits[level]);
+  }
+
+
+  // Fill up the remainder of L2 (all misses)
+  for (uint64_t a = size_per_level; a < 2 * size_per_level; a += line_size) ch.touch(a);
+
+  for (int level = 1; level <= hierarchy_size; level++) {
+    misses[level] += touches_per_level;
+    REQUIRE(ch.getMisses(level) == misses[level]);
+    REQUIRE(ch.getHits(level) == hits[level]);
+  }
+
+  // Read the previous values (misses L1, but hits L2)
+  for (uint64_t a = 0; a < size_per_level; a += line_size) ch.touch(a);
+  misses[1] += touches_per_level;
+  hits[2] += touches_per_level;
+
+  for (int level = 1; level <= hierarchy_size; level++) {
+    REQUIRE(ch.getMisses(level) == misses[level]);
+    REQUIRE(ch.getHits(level) == hits[level]);
+  }
+
+
+  // Fill up the remainder of L3 (all misses)
+  for (uint64_t a = 2 * size_per_level; a < 4 * size_per_level; a += line_size)
+    ch.touch(a);
+
+  for (int level = 1; level <= hierarchy_size; level++) {
+    misses[level] += 2 * touches_per_level;
+    REQUIRE(ch.getMisses(level) == misses[level]);
+  }
+
+  // Read the initial values (misses L1 and L2, but hits L3)
+  for (uint64_t a = 0; a < size_per_level; a += line_size) ch.touch(a);
+  misses[1] += touches_per_level;
+  misses[2] += touches_per_level;
+  hits[3] += touches_per_level;
+
+  for (int level = 1; level <= hierarchy_size; level++) {
+    REQUIRE(ch.getMisses(level) == misses[level]);
+    REQUIRE(ch.getHits(level) == hits[level]);
+  }
+}

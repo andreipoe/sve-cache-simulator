@@ -92,7 +92,7 @@ void CacheHierarchy::touch(uint64_t address, int size) {
 
   while (remaining_size > 0) {
     CacheEvents events;
-    int current_level = nlevels() - 1;
+    int current_level { 0 };
 
     // Go through cache levels in reverse order until either all accesses are hits or
     // we've reached the top level
@@ -100,8 +100,8 @@ void CacheHierarchy::touch(uint64_t address, int size) {
       // Find the first cache line this request touches
       auto const& cache_address = levels[current_level]->split_address(next_address);
       events                    = levels[current_level]->touch(cache_address);
-      current_level--;
-    } while (!events.hit() && current_level >= 0);
+      current_level++;
+    } while (!events.hit() && current_level < nlevels());
 
     // Skip over the remaining bytes in this same cache line
     const unsigned int covered_bytes =
