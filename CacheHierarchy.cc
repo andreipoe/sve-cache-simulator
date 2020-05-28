@@ -7,7 +7,8 @@
 
 #define KEY_NLEVELS "levels"
 
-CacheHierarchy::CacheHierarchy(const std::vector<CacheConfig> cache_configs) {
+CacheHierarchy::CacheHierarchy(const std::vector<CacheConfig> cache_configs)
+    : traffic(cache_configs.size() + 1, 0) {
   levels.reserve(cache_configs.size());
   for (const auto& config : cache_configs) levels.push_back(Cache::make_cache(config));
 
@@ -33,6 +34,8 @@ CacheHierarchy::CacheHierarchy(std::istream&& config_file) {
   } catch (const std::out_of_range& e) {
     throw std::invalid_argument(std::string("Malformed config file: ") + e.what());
   }
+
+  traffic = std::vector<uint64_t>(nlevels + 1, 0);
   levels.reserve(nlevels);
 
   for (int level = 1; level <= nlevels; level++) {
@@ -83,9 +86,13 @@ uint64_t CacheHierarchy::getEvictions(int level) const {
   return levels[level - 1]->getEvictions();
 }
 
+uint64_t CacheHierarchy::getTraffic(int from_level) const { return traffic[from_level]; }
+
 
 void CacheHierarchy::touch(uint64_t address, int size) {
   const int line_size = levels[0]->getLineSize();
+
+  traffic[0] += size;
 
   uint64_t next_address { address };
   int remaining_size { size };
@@ -100,6 +107,9 @@ void CacheHierarchy::touch(uint64_t address, int size) {
       // Find the first cache line this request touches
       auto const& cache_address = levels[current_level]->split_address(next_address);
       events                    = levels[current_level]->touch(cache_address);
+
+      if (!events.hit()) traffic[current_level + 1] += line_size;
+
       current_level++;
     } while (!events.hit() && current_level < nlevels());
 
@@ -113,10 +123,18 @@ void CacheHierarchy::touch(uint64_t address, int size) {
 
 void CacheHierarchy::touch(SizedAccess access) { touch(access.address, access.size); }
 
+void CacheHierarchy::touch(MemoryRequest request) {
+  touch(request.address, request.size);
+}
+
 void CacheHierarchy::touch(const std::vector<uint64_t> addresses) {
   for (auto const& a : addresses) touch(a);
 }
 
 void CacheHierarchy::touch(const std::vector<SizedAccess> accesses) {
   for (auto const& a : accesses) touch(a);
+}
+
+void CacheHierarchy::touch(const std::vector<MemoryRequest> requests) {
+  for (auto const& r : requests) touch(r);
 }

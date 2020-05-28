@@ -31,6 +31,8 @@
       "request": "launch",
       "program": "${workspaceFolder}/build-debug-gnu/scs",
       "args": [
+        "-c",
+        "../configs/TX2.ini",
         "../sve-memtrace.bude-sve-arm19.2.15792.log"
       ],
       "stopAtEntry": false,

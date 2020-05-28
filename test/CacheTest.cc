@@ -185,9 +185,15 @@ TEST_CASE("Sized access touched the correct number of cache lines", "[model][com
   const int lines_touched      = GENERATE(range(1, 5));
   std::unique_ptr<Cache> cache = make_default_cache(GENERATE(values(CACHE_TYPES)));
 
-  const SizedAccess access = { 0, lines_touched * cache->getLineSize() };
-  cache->touch(access);
+  SECTION("Using SizedAccess") {
+    const SizedAccess access { 0, lines_touched * cache->getLineSize() };
+    cache->touch(access);
+  }
+  SECTION("Using MemoryRequest") {
+    const MemoryRequest request { 0, lines_touched * cache->getLineSize(), 0, 0, 0, 42 };
+    cache->touch(request);
+  }
 
-  REQUIRE(cache->getMisses() == lines_touched);
+  REQUIRE(cache->getMisses() == static_cast<uint64_t>(lines_touched));
   REQUIRE(cache->getHits() == 0);
 }

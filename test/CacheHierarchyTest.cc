@@ -149,3 +149,46 @@ TEST_CASE("Sized access touched the correct number of cache lines thorough a hie
   REQUIRE(ch->getMisses(1) == static_cast<uint64_t>(lines_touched));
   REQUIRE(ch->getHits(1) == 0);
 }
+
+TEST_CASE("Traffic between levels is counted correctly", "[hierarchy][stats]") {
+  auto ch = make_default_hierarchy(CacheType::SetAssociative);
+
+  SECTION("When accessing full lines") {
+    const int size = GENERATE(8, 16, 64);
+
+    // Miss both caches
+    for (uint64_t address = 0; address < DEFAULT_CACHE_SIZE; address += size)
+      ch->touch(address, size);
+
+    // Miss L1 but not L2
+    for (uint64_t address = 0; address < DEFAULT_CACHE_SIZE / 2; address += size)
+      ch->touch(address, size);
+
+    // Traffic between to the first level of cache depends on the size of the requests
+    REQUIRE(ch->getTraffic(0) == DEFAULT_CACHE_SIZE / 2 * 3);
+  }
+
+  SECTION("When partially accessing lines") {
+
+    // Miss both caches
+    for (uint64_t address = 0; address < DEFAULT_CACHE_SIZE; address += DEFAULT_LINE_SIZE)
+      ch->touch(address, 1);
+
+    // Miss L1 but not L2
+    for (uint64_t address = 0; address < DEFAULT_CACHE_SIZE / 2;
+         address += DEFAULT_LINE_SIZE)
+      ch->touch(address, 1);
+
+    // Traffic between to the first level of cache depends on the size of the requests
+    REQUIRE(ch->getTraffic(0) == DEFAULT_CACHE_SIZE / DEFAULT_LINE_SIZE / 2 * 3);
+  }
+
+  // Sanity check that we've touched the elements we wanted
+  CHECK(ch->getMisses(1) ==
+        3 * (DEFAULT_CACHE_SIZE / DEFAULT_HIERARCHY_SIZE) / DEFAULT_LINE_SIZE);
+  CHECK(ch->getMisses(2) == DEFAULT_CACHE_SIZE / DEFAULT_LINE_SIZE);
+
+  // Traffic between caches only depends on cache line sizes, not on the size of the accesses
+  REQUIRE(ch->getTraffic(1) == DEFAULT_CACHE_SIZE / 2 * 3);
+  REQUIRE(ch->getTraffic(2) == DEFAULT_CACHE_SIZE);
+}

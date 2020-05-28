@@ -59,40 +59,19 @@ int main(int argc, char* argv[]) {
     std::cout << "Cannot open config file: " << config_fname << "\n";
     std::exit(EXIT_INVALID_CONFIG);
   }
+  std::cout << "Config file: " << config_fname << "\n";
 
   std::ifstream tracefile { argv[0] };
   if (!tracefile.is_open()) {
     std::cout << "Cannot open trace file: " << argv[0] << "\n";
     std::exit(EXIT_INVALID_TRACE);
   }
-
   MemoryTrace trace(tracefile);
 
   std::cout.imbue({ std::locale(), new CommaNumPunct() });
 
-  std::cout << "Using an infinite cache.\n";
-  InfiniteCache infinite_cache;
-  run_and_print_stats(trace, infinite_cache);
-
-  std::cout << "--------------\n";
-
-  std::cout << "Using a direct-mapped cache.\n";
-  CacheConfig dm_config(CacheType::DirectMapped, 32768, 64);
-  DirectMappedCache direct_mapped_cache(dm_config);
-  run_and_print_stats(trace, direct_mapped_cache);
-
-  std::cout << "--------------\n";
-
-  std::cout << "Using a small set-associative cache.\n";
-  CacheConfig sa_config(CacheType::SetAssociative, 32768, 64, 4);
-  SetAssociativeCache set_associative_cache(sa_config);
-  run_and_print_stats(trace, set_associative_cache);
-
-  std::cout << "--------------\n";
-
-  std::cout << "Using a TX2 cache.\n";
-  CacheHierarchy tx2_cache { std::move(config_file) };
-  run_and_print_stats(trace, tx2_cache);
+  CacheHierarchy cache { std::move(config_file) };
+  run_and_print_stats(trace, cache);
 
   return 0;
 }
@@ -104,6 +83,7 @@ void usage(int code) {
 }
 
 
+// Deprecated
 void run_and_print_stats(MemoryTrace const& trace, Cache& cache) {
   auto addresses = trace.getRequestAddresses();
   cache.touch(addresses);
@@ -127,12 +107,18 @@ void run_and_print_stats(MemoryTrace const& trace, Cache& cache) {
 }
 
 void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache) {
-  auto addresses = trace.getRequestAddresses();
-  cache.touch(addresses);
+  cache.touch(trace.getRequests());
 
+  const auto addresses = trace.getRequestAddresses();
   std::set<uint64_t> unique_addresses(addresses.begin(), addresses.end());
   std::cout << "Trace has " << trace.getLength() << " entries.\n";
-  std::cout << "Seen " << unique_addresses.size() << " unique addresses.\n";
+  std::cout << "Seen " << unique_addresses.size() << " unique addresses.\n\n";
+
+  std::cout << "CPU to L1 traffic: " << cache.getTraffic(0) << " bytes\n";
+
+  std::vector<std::string> level_names(cache.nlevels() + 2);
+  for (int level = 1; level <= cache.nlevels() + 1; level++)
+    level_names[level] = "L" + std::to_string(level);
 
   for (int level = 1; level <= cache.nlevels(); level++) {
     const auto hits       = cache.getHits(level);
@@ -142,13 +128,14 @@ void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache) {
     const auto pct_hits   = (static_cast<double>(hits) / total) * 100.0;
     const auto pct_misses = 100.0 - pct_hits;
 
-    const std::string levelname { "L" + std::to_string(level) };
     std::cout << "\n";
-    std::cout << levelname << " Total accesses: " << total << "\n";
-    std::cout << levelname << " Hits: " << hits << " (" << std::fixed
+    std::cout << level_names[level] << " Total accesses: " << total << "\n";
+    std::cout << level_names[level] << " Hits: " << hits << " (" << std::fixed
               << std::setprecision(2) << pct_hits << "%)\n";
-    std::cout << levelname << " Misses: " << misses << " (" << std::fixed
+    std::cout << level_names[level] << " Misses: " << misses << " (" << std::fixed
               << std::setprecision(2) << pct_misses << "%)\n";
-    std::cout << levelname << " Evictions: " << evictions << "\n";
+    std::cout << level_names[level] << " Evictions: " << evictions << "\n";
+    std::cout << level_names[level] << " to " << level_names[level + 1]
+              << " traffic: " << cache.getTraffic(level) << " bytes\n";
   }
 }

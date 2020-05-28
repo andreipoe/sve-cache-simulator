@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "CacheConfig.hh"
+#include "MemoryTrace.hh"
 
 struct CacheEvents {
   uint64_t hits { 0 }, misses { 0 }, evictions { 0 };
@@ -105,6 +106,9 @@ class Cache {
   /* Run a single request through the cache */
   virtual CacheEvents touch(const SizedAccess access) final;
 
+  /* Run a single request through the cache */
+  virtual CacheEvents touch(MemoryRequest request) final;
+
   /* Run a sequence of addresses through the cache,
    * assuming the access doesn't cross cache-line boundaries */
   virtual CacheEvents touch(const std::vector<uint64_t> addresses) final;
@@ -113,8 +117,11 @@ class Cache {
    */
   virtual CacheEvents touch(const std::vector<CacheAddress> addresses) final;
 
-  /* Run a sequence of acceesses through the cache */
+  /* Run a sequence of accesses through the cache */
   virtual CacheEvents touch(const std::vector<SizedAccess> accesses) final;
+
+  /* Run a sequence of requests through the cache */
+  virtual CacheEvents touch(const std::vector<MemoryRequest> requests) final;
 
   virtual uint64_t getSize() const final;
   virtual int getLineSize() const final;
@@ -125,6 +132,8 @@ class Cache {
   uint64_t getMisses() const;
   uint64_t getTotalAccesses() const;
   uint64_t getEvictions() const;
+
+  // TODO: add counts for scatters and gathers
 
   /* Factory method for creating caches based on the given configuration */
   static std::unique_ptr<Cache> make_cache(const CacheConfig config);

@@ -6,7 +6,8 @@
 #include "MemoryTrace.hh"
 
 MemoryRequest::MemoryRequest(const int tid, const int size, const bool is_bundle,
-                             const bool is_write, const uint64_t address, const uint64_t pc)
+                             const bool is_write, const uint64_t address,
+                             const uint64_t pc)
     : tid(tid),
       size(size),
       is_bundle(is_bundle),
@@ -16,7 +17,7 @@ MemoryRequest::MemoryRequest(const int tid, const int size, const bool is_bundle
 
 MemoryTrace::MemoryTrace(std::istream& tracefile) {
   for (std::string line; std::getline(tracefile, line);) {
-    std::remove(line.begin(), line.end(), ',');
+    line.erase(std::remove(line.begin(), line.end(), ','), line.end());
 
 #ifdef DEBUG
     std::cout << "Line: " << line << "\n";
