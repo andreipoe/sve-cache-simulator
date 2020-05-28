@@ -133,8 +133,6 @@ class Cache {
   uint64_t getTotalAccesses() const;
   uint64_t getEvictions() const;
 
-  // TODO: add counts for scatters and gathers
-
   /* Factory method for creating caches based on the given configuration */
   static std::unique_ptr<Cache> make_cache(const CacheConfig config);
 

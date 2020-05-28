@@ -33,7 +33,8 @@
       "args": [
         "-c",
         "../configs/TX2.ini",
-        "../sve-memtrace.bude-sve-arm19.2.15792.log"
+        // "../sve-memtrace.bude-sve-arm19.2.15792.log"
+        "../sve-memtrace.spatter.201201.log"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/build-debug-gnu",

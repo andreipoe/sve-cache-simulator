@@ -6,14 +6,23 @@
 #include "cache.hh"
 
 
+struct BundleStats {
+  uint64_t times_encountered { 0 }, total_ops { 0 };
+};
+
 class CacheHierarchy {
   /* A 0-indexed list of cache levels (Ln is `levels[n-1]`) */
   std::vector<std::unique_ptr<Cache>> levels;
 
   /* The cache traffic, in bytes, between each level and the one above.
    * `traffic[0]` is the total amount of data requested from this hierarchy
-   * `traffic[nlevels()]` is the total amount of data transferred between this hierarchy and main memory */
+   * `traffic[nlevels()]` is the total amount of data transferred between this hierarchy
+   * and main memory */
   std::vector<uint64_t> traffic;
+
+  /* The scatter/gather bundles encountered, as a mapping from PC to number of separate
+   * ops */
+  std::map<uint64_t, BundleStats> bundles;
 
   // TODO: support inclusive and exclusive caches
 
@@ -35,12 +44,14 @@ class CacheHierarchy {
   uint64_t getTotalAccesses(int level) const;
   uint64_t getEvictions(int level) const;
 
-  /* Get the traffic, in bytes, between the given level and the one above */
-  uint64_t getTraffic(int from_level) const;
-
   /* TODO: it may be useful to add a metric for "useful" cache traffic, counting how much
    data was requested and had to be fetched, as opposed to how much was actually fetched
    due to cache line restrictions  */
+  /* Get the traffic, in bytes, between the given level and the one above */
+  uint64_t getTraffic(int from_level) const;
+
+  /* Get a mapping from scatter/gather PCs to number of accesses executed */
+  std::map<uint64_t, BundleStats> getBundleOps() const;
 
 
   /* Accesses*/

@@ -188,7 +188,25 @@ TEST_CASE("Traffic between levels is counted correctly", "[hierarchy][stats]") {
         3 * (DEFAULT_CACHE_SIZE / DEFAULT_HIERARCHY_SIZE) / DEFAULT_LINE_SIZE);
   CHECK(ch->getMisses(2) == DEFAULT_CACHE_SIZE / DEFAULT_LINE_SIZE);
 
-  // Traffic between caches only depends on cache line sizes, not on the size of the accesses
+  // Traffic between caches only depends on cache line sizes, not on the size of the
+  // accesses
   REQUIRE(ch->getTraffic(1) == DEFAULT_CACHE_SIZE / 2 * 3);
   REQUIRE(ch->getTraffic(2) == DEFAULT_CACHE_SIZE);
+}
+
+TEST_CASE("Bundles are counted correctly", "[hierarchy][stats][bundle]") {
+  auto ch               = make_default_hierarchy(CacheType::SetAssociative);
+  const auto tracefname = try_tracefile_names("traces/bundle.trace");
+  const MemoryTrace trace { std::ifstream { tracefname } };
+
+  ch->touch(trace.getRequests());
+
+  const auto bundles = ch->getBundleOps();
+  REQUIRE(bundles.size() == 2);
+
+  REQUIRE(bundles.at(0x40e364).times_encountered == 2);
+  REQUIRE(bundles.at(0x40e364).total_ops == 2 * 4);
+
+  REQUIRE(bundles.at(0x40e200).times_encountered == 1);
+  REQUIRE(bundles.at(0x40e200).total_ops == 6);
 }

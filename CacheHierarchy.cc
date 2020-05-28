@@ -88,6 +88,8 @@ uint64_t CacheHierarchy::getEvictions(int level) const {
 
 uint64_t CacheHierarchy::getTraffic(int from_level) const { return traffic[from_level]; }
 
+std::map<uint64_t, BundleStats> CacheHierarchy::getBundleOps() const { return bundles; }
+
 
 void CacheHierarchy::touch(uint64_t address, int size) {
   const int line_size = levels[0]->getLineSize();
@@ -124,6 +126,10 @@ void CacheHierarchy::touch(uint64_t address, int size) {
 void CacheHierarchy::touch(SizedAccess access) { touch(access.address, access.size); }
 
 void CacheHierarchy::touch(MemoryRequest request) {
+  if (request.bundle_kind != BundleKind::None) {
+    bundles[request.pc].total_ops++;
+    if (request.bundle_kind == BundleKind::Start) bundles[request.pc].times_encountered++;
+  }
   touch(request.address, request.size);
 }
 

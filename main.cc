@@ -138,4 +138,20 @@ void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache) {
     std::cout << level_names[level] << " to " << level_names[level + 1]
               << " traffic: " << cache.getTraffic(level) << " bytes\n";
   }
+
+  const auto bundles = cache.getBundleOps();
+  uint64_t total_bundles { 0 }, total_bundle_ops { 0 };
+  for (const auto b : bundles) {
+    total_bundles += b.second.times_encountered;
+    total_bundle_ops += b.second.total_ops;
+  }
+  const auto bundle_ratio =
+      static_cast<double>(total_bundle_ops) / addresses.size() * 100;
+
+  std::cout << "\n";
+  std::cout << "Total scatter/gather bundles simulated: " << total_bundles << "\n";
+  std::cout << "Total unique scatter/gather bundles encountered: " << bundles.size()
+            << "\n";
+  std::cout << "Total ops part of scatters/gathers: " << total_bundle_ops << " ("
+            << std::setprecision(2) << bundle_ratio << "%)\n";
 }
