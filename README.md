@@ -93,7 +93,7 @@ Alternatively, define it as a hierarchy with a single level:
 [hierarchy]
 levels = 1
 
-[level1]
+[L1]
 type = set_associative
 cache_size = 32768
 line_size = 64
@@ -108,13 +108,13 @@ To define a hierarchy, first define the number of levels, then define the parame
 [hierarchy]
 levels = 2
 
-[level1]
+[L1]
 type = set_associative
 cache_size = 4096
 line_size = 64
 set_size = 4
 
-[level2]
+[L2]
 type = set_associative
 cache_size = 32768
 line_size = 64

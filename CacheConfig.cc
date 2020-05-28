@@ -22,9 +22,9 @@ CacheConfig::CacheConfig(std::istream&& config_file) {
     throw std::invalid_argument("Too many sections section in cache config file: " +
                                 std::to_string(ini.sections.size()));
   else {
-    // If there are exactly two sections, they must be "hierarchy" and "level1"
+    // If there are exactly two sections, they must be "hierarchy" and "L1"
     for (const auto& section : ini.sections)
-      if (section.first != "hierarchy" && section.first != "level1")
+      if (section.first != "hierarchy" && section.first != "L1")
         throw std::invalid_argument("Invalid section in cache config file: " +
                                     section.first);
 
@@ -40,7 +40,7 @@ CacheConfig::CacheConfig(std::istream&& config_file) {
 
 
   auto config_section =
-      ini.sections.size() == 1 ? ini.sections.at("") : ini.sections.at("level1");
+      ini.sections.size() == 1 ? ini.sections.at("") : ini.sections.at("L1");
   read_config_map_(config_section);
 }
 

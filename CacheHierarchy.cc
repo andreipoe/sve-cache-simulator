@@ -3,7 +3,7 @@
 #include "inipp.h"
 
 #define SECTION_HIERARCHY "hierarchy"
-#define SECTION_LEVEL     "level"
+#define SECTION_LEVEL     "L"
 
 #define KEY_NLEVELS "levels"
 
