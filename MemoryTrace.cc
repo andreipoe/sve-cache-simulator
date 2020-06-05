@@ -45,6 +45,8 @@ BundleKind MemoryRequest::parse_bundle_kind(int bundle_value) {
 
 
 MemoryTrace::MemoryTrace(std::istream& tracefile) {
+  std::istringstream iss;
+
   for (std::string line; std::getline(tracefile, line);) {
     if (line.empty()) continue;
 
@@ -54,10 +56,10 @@ MemoryTrace::MemoryTrace(std::istream& tracefile) {
     std::cout << "Line: " << line << "\n";
 #endif
 
-    // TODO: Consider not constructing a stringstream for every line in the trace file by
-    // moving this outside the loop
-    std::istringstream iss(line);
+    iss.clear();
+    iss.str(line);
 
+    // TODO: 50% of run time is spent here. Consider using a regex
     int seq, tid, size, bundle_kind;
     bool is_write;
     uint64_t address, pc;
