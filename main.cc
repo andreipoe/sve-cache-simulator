@@ -33,7 +33,7 @@ void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache);
 
 int main(int argc, char* argv[]) {
   // TODO: consider using Lyra for argument parsing https://github.com/bfgroup/Lyra
-  char opt;
+  signed char opt;
   std::string config_fname;
 
   while ((opt = getopt(argc, argv, "c:")) != -1) {
