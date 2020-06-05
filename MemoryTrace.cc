@@ -46,6 +46,8 @@ BundleKind MemoryRequest::parse_bundle_kind(int bundle_value) {
 
 MemoryTrace::MemoryTrace(std::istream& tracefile) {
   for (std::string line; std::getline(tracefile, line);) {
+    if (line.empty()) continue;
+
     line.erase(std::remove(line.begin(), line.end(), ','), line.end());
 
 #ifdef DEBUG

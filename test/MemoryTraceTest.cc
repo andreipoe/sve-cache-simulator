@@ -47,3 +47,14 @@ TEST_CASE("Memory requests are constructed correctly from trace entries", "[trac
   REQUIRE(req.address == address);
   REQUIRE(req.pc == pc);
 }
+
+TEST_CASE("Empty lines in trace files are skipped over", "[trace][regression]") {
+  std::istringstream ss {
+    "\n"
+    "214864667, 0, 0, 0, 64, 0x4000847ad870, 0x434edc\n\n"
+    "214864668, 0, 0, 0, 64, 0x4000863fb8f0, 0x434ef4\n"
+  };
+  const MemoryTrace trace {ss};
+
+  REQUIRE(trace.getLength() == 2);
+}
