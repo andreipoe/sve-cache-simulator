@@ -59,11 +59,10 @@ MemoryTrace::MemoryTrace(std::istream& tracefile) {
     iss.clear();
     iss.str(line);
 
-    // TODO: 50% of run time is spent here. Consider using a regex
     int seq, tid, size, bundle_kind;
     bool is_write;
     uint64_t address, pc;
-    iss >> seq >> tid >> bundle_kind >> is_write >> size;
+    iss >> std::dec >> seq >> tid >> bundle_kind >> is_write >> size;
     iss >> std::hex >> address >> pc;
 
 #ifdef DEBUG

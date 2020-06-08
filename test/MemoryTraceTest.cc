@@ -57,4 +57,8 @@ TEST_CASE("Empty lines in trace files are skipped over", "[trace][regression]") 
   const MemoryTrace trace {ss};
 
   REQUIRE(trace.getLength() == 2);
+
+  const auto addresses = trace.getRequestAddresses();
+  REQUIRE(addresses[0] == 0x4000847ad870);
+  REQUIRE(addresses[1] == 0x4000863fb8f0);
 }
