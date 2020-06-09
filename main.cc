@@ -109,12 +109,18 @@ void run_and_print_stats(MemoryTrace const& trace, Cache& cache) {
 void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache) {
   cache.touch(trace.getRequests());
 
+  std::ostringstream csv_data, csv_header;
+
   const auto addresses = trace.getRequestAddresses();
   std::set<uint64_t> unique_addresses(addresses.begin(), addresses.end());
   std::cout << "Trace has " << trace.getLength() << " entries.\n";
   std::cout << "Seen " << unique_addresses.size() << " unique addresses.\n\n";
 
   std::cout << "CPU to L1 traffic: " << cache.getTraffic(0) << " bytes\n";
+
+  // TODO: Add flags to choose between plain and CSV output. Batch experiments should only output CSV
+  csv_header << "CPU-L1-traffic,";
+  csv_data << cache.getTraffic(0) << ',';
 
   std::vector<std::string> level_names(cache.nlevels() + 2);
   for (int level = 1; level <= cache.nlevels() + 1; level++)
@@ -137,6 +143,11 @@ void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache) {
     std::cout << level_names[level] << " Evictions: " << evictions << "\n";
     std::cout << level_names[level] << " to " << level_names[level + 1]
               << " traffic: " << cache.getTraffic(level) << " bytes\n";
+
+    csv_header << level_names[level] << "-miss-pct," << level_names[level]
+               << "-evictions," << level_names[level] << '-' << level_names[level + 1]
+               << "-traffic,";
+    csv_data << pct_misses << ',' << evictions << ',' << cache.getTraffic(level) << ',';
   }
 
   const auto bundles = cache.getBundleOps();
@@ -154,4 +165,6 @@ void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache) {
             << "\n";
   std::cout << "Total ops part of scatters/gathers: " << total_bundle_ops << " ("
             << std::setprecision(2) << bundle_ratio << "%)\n";
+
+  std::cout << "\n" << csv_header.str() << "\n" << csv_data.str() << "\n";
 }
