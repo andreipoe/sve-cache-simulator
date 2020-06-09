@@ -1,5 +1,6 @@
 #include "catch.hpp"
 
+#include <sstream>
 #include <vector>
 
 #include "utils.hh"
@@ -195,9 +196,8 @@ TEST_CASE("Traffic between levels is counted correctly", "[hierarchy][stats]") {
 }
 
 TEST_CASE("Bundles are counted correctly", "[hierarchy][stats][bundle]") {
-  auto ch               = make_default_hierarchy(CacheType::SetAssociative);
-  const auto tracefname = try_tracefile_names("traces/bundle.trace");
-  const MemoryTrace trace { std::ifstream { tracefname } };
+  auto ch = make_default_hierarchy(CacheType::SetAssociative);
+  const MemoryTrace trace { std::istringstream { TestTraces::BUNDLE } };
 
   ch->touch(trace.getRequests());
 

@@ -26,9 +26,9 @@ if build_type == 'release'
     # Fix Homebew LLVM build on Mac
     if build_machine.system() == 'darwin'
       cpp_args += ['-I/usr/local/opt/llvm/include']
-      link_args += ['-L/usr/local/opt/llvm/lib', ]
+      link_args += ['-L/usr/local/opt/llvm/lib']
       rpath = '/usr/local/opt/llvm/lib'
-endif
+    endif
   endif
 elif build_type == 'debug' and meson.get_compiler('cpp').get_id() == 'gcc'
   cpp_args += ['-g3']
@@ -74,8 +74,5 @@ test_exe = executable('scs-test', src_test,
 
 test('Cacth2 tests', test_exe)
 
-# Copy the test data to the build directory (this will only happen once, when running `meson setup`)
-# test_data_dir = '$MESON_BUILD_ROOT/test'
-# run_command('mkdir', test_data_dir)
-# run_command('cp', '-r', '$MESON_SOURCE_ROOT/test/traces', test_data_dir)
-# run_command('cp', '-r', '$MESON_SOURCE_ROOT/configs', test_data_dir)
+# We cannot reliably copy test trace files at build time
+# See https://github.com/mesonbuild/meson/issues/860

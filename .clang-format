@@ -2,7 +2,7 @@ BasedOnStyle: Google
 
 DerivePointerAlignment: false
 PointerAlignment: true
-Standard: C++11
+Standard: c++17
 
 AlignConsecutiveAssignments: true
 AlignConsecutiveMacros: true
@@ -14,6 +14,6 @@ KeepEmptyLinesAtTheStartOfBlocks: true
 MaxEmptyLinesToKeep: 2
 SpaceBeforeCpp11BracedList: true
 SpaceBeforeParens: "ControlStatements"
-# SpaceInEmptyBlock: true
+SpaceInEmptyBlock: true
 
 # vim: ft=yaml

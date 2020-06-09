@@ -27,7 +27,8 @@ constexpr unsigned int nbits(const uint64_t n) { return n == 1 ? 0 : 1 + nbits(n
 
 
 /* Try a few common locations where test trace files can be found, returning the first one
- * that matches or raising an exception */
+ * that matches or raising an exception
+ * Deprecated: Use a TestTrace constant object instead of a test trace file */
 std::string try_tracefile_names(const std::string& name);
 
 /* Try a few common locations where test trace files can be found, returning the first one
@@ -46,5 +47,27 @@ CacheConfig get_default_cache_config(CacheType type);
 /* Create a cache of the specified type, using the default testing parameters */
 std::unique_ptr<Cache> make_default_cache(CacheType type);
 
-/* Create a cache hierarchy cache of the specified type, using the default testing parameters */
+/* Create a cache hierarchy cache of the specified type, using the default testing
+ * parameters */
 std::unique_ptr<CacheHierarchy> make_default_hierarchy(CacheType type);
+
+
+namespace TestTraces {
+const std::string BUNDLE =
+    "4016116, 0, 3, 0, 8, 0x6cf540, 0x40e364\n"
+    "4016117, 0, 2, 0, 8, 0x6cf560, 0x40e364\n"
+    "4016118, 0, 2, 0, 8, 0x6cf580, 0x40e364\n"
+    "4016123, 0, 6, 0, 8, 0x6cf620, 0x40e364\n"
+    "4016116, 0, 3, 0, 8, 0x6cf540, 0x40e364\n"
+    "4016117, 0, 2, 0, 8, 0x6cf560, 0x40e364\n"
+    "4016118, 0, 2, 0, 8, 0x6cf580, 0x40e364\n"
+    "4016123, 0, 6, 0, 8, 0x6cf620, 0x40e364\n"
+    "4016124, 0, 0, 1, 64, 0x6e0000, 0x40e370\n"
+    "4016126, 0, 0, 0, 64, 0x630a00, 0x40e360\n"
+    "4016127, 0, 3, 0, 8, 0x6cf580, 0x40e200\n"
+    "4016128, 0, 2, 0, 8, 0x6cf5a0, 0x40e200\n"
+    "4016129, 0, 2, 0, 8, 0x6cf5c0, 0x40e200\n"
+    "4016130, 0, 2, 0, 8, 0x6cf5e0, 0x40e200\n"
+    "4016131, 0, 2, 0, 8, 0x6cf600, 0x40e200\n"
+    "4016134, 0, 6, 0, 8, 0x6cf660, 0x40e200\n";
+}  // namespace TestTraces
