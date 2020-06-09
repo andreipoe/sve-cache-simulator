@@ -2,9 +2,9 @@ project('sve-cache-simulator', 'cpp', version: '0.0.1',
   default_options: ['cpp_std=c++17', 'buildtype=release', 'b_lto=true', 'warning_level=3'])
 
 # ------- Build Options -------
-# TODO: Consider setting flags with built-in meson functions
 cpp_args = []
 link_args = []
+rpath = ''
 
 build_type = get_option('buildtype')
 if build_type == 'release'
@@ -25,9 +25,9 @@ if build_type == 'release'
 
     # Fix Homebew LLVM build on Mac
     if build_machine.system() == 'darwin'
-      # TODO: setting rpath like this is deprecated
       cpp_args += ['-I/usr/local/opt/llvm/include']
-      link_args += ['-L/usr/local/opt/llvm/lib', '-Wl,-rpath,/usr/local/opt/llvm/lib']
+      link_args += ['-L/usr/local/opt/llvm/lib', ]
+      rpath = '/usr/local/opt/llvm/lib'
 endif
   endif
 elif build_type == 'debug' and meson.get_compiler('cpp').get_id() == 'gcc'
@@ -47,7 +47,10 @@ src_common = files([
   'SetAssociativeCache.cc'
 ])
 src_main = files('main.cc')
-main_exe = executable('scs', src_common + src_main, cpp_args: cpp_args, link_args: link_args)
+main_exe = executable('scs', src_common, src_main,
+                      cpp_args: cpp_args,
+                      link_args: link_args,
+                      build_rpath: rpath)
 
 
 # ------- Tests -------
@@ -63,8 +66,12 @@ src_test = files([
   'test/test.cc',
   'test/utils.cc'
 ])
-test_exe = executable('scs-test', src_test, objects: main_exe.extract_objects(src_common),
-  cpp_args: cpp_args, link_args: link_args)
+test_exe = executable('scs-test', src_test,
+                      objects: main_exe.extract_objects(src_common),
+                      cpp_args: cpp_args,
+                      link_args: link_args,
+                      build_rpath: rpath)
+
 test('Cacth2 tests', test_exe)
 
 # Copy the test data to the build directory (this will only happen once, when running `meson setup`)
