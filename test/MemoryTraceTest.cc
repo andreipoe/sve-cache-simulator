@@ -25,7 +25,7 @@ TEST_CASE("Trace files are loaded correctly", "[trace]") {
 TEST_CASE("Memory requests are constructed correctly from trace entries", "[trace]") {
   const int seq { 42 }, tid { 12 };
   const int size        = GENERATE(1, 8, 16, 32, 64, 128, 256, 512, 1024, 2048);
-  const int bundle_kind = GENERATE(0, 1, 2, 3, 4, 6);
+  const int bundle_kind = GENERATE(0, 1, 2, 3, 4, 6, 7);
   const bool is_write   = GENERATE(0, 1);
   const uint64_t address { get_random_address() }, pc { get_random_address() };
 
@@ -42,7 +42,7 @@ TEST_CASE("Memory requests are constructed correctly from trace entries", "[trac
   // Check the the produced request has the same values as the input
   REQUIRE(req.size == size);
   REQUIRE(req.tid == tid);
-  REQUIRE(req.bundle_kind == MemoryRequest::parse_bundle_kind(bundle_kind));
+  REQUIRE(req.bundle_kind == bundle_kind);
   REQUIRE(req.is_write == is_write);
   REQUIRE(req.address == address);
   REQUIRE(req.pc == pc);
@@ -54,7 +54,7 @@ TEST_CASE("Empty lines in trace files are skipped over", "[trace][regression]") 
     "214864667, 0, 0, 0, 64, 0x4000847ad870, 0x434edc\n\n"
     "214864668, 0, 0, 0, 64, 0x4000863fb8f0, 0x434ef4\n"
   };
-  const MemoryTrace trace {ss};
+  const MemoryTrace trace { ss };
 
   REQUIRE(trace.getLength() == 2);
 

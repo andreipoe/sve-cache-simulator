@@ -126,9 +126,9 @@ void CacheHierarchy::touch(uint64_t address, int size) {
 void CacheHierarchy::touch(SizedAccess access) { touch(access.address, access.size); }
 
 void CacheHierarchy::touch(MemoryRequest request) {
-  if (request.bundle_kind != BundleKind::None) {
+  if (request.is_bundle()) {
     bundles[request.pc].total_ops++;
-    if (request.bundle_kind == BundleKind::Start) bundles[request.pc].times_encountered++;
+    if (request.is_bundle_start()) bundles[request.pc].times_encountered++;
   }
   touch(request.address, request.size);
 }

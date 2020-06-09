@@ -5,17 +5,7 @@
 
 #include "MemoryTrace.hh"
 
-MemoryRequest::MemoryRequest(const int tid, const int size, const int bundle_value,
-                             const bool is_write, const uint64_t address,
-                             const uint64_t pc)
-    : tid(tid),
-      size(size),
-      bundle_kind(parse_bundle_kind(bundle_value)),
-      is_write(is_write),
-      address(address),
-      pc(pc) {}
-
-MemoryRequest::MemoryRequest(const int tid, const int size, const BundleKind bundle_kind,
+MemoryRequest::MemoryRequest(const int tid, const int size, const int bundle_kind,
                              const bool is_write, const uint64_t address,
                              const uint64_t pc)
     : tid(tid),
@@ -23,25 +13,12 @@ MemoryRequest::MemoryRequest(const int tid, const int size, const BundleKind bun
       bundle_kind(bundle_kind),
       is_write(is_write),
       address(address),
-      pc(pc) {}
+      pc(pc) { }
 
-BundleKind MemoryRequest::parse_bundle_kind(int bundle_value) {
-  switch (bundle_value) {
-    case 0:
-      return BundleKind::None;
-    case 1:
-    case 3:
-      return BundleKind::Start;
-    case 2:
-      return BundleKind::Middle;
-    case 4:
-    case 6:
-      return BundleKind::Middle;
-    default:
-      throw std::invalid_argument(std::to_string(bundle_value) +
-                                  " is not a bundle kind value");
-  }
-}
+bool MemoryRequest::is_bundle() const { return bundle_kind != 0; }
+bool MemoryRequest::is_bundle_start() const { return bundle_kind & 0x1; }
+bool MemoryRequest::is_bundle_middle() const { return bundle_kind & 0x2; }
+bool MemoryRequest::is_bundle_end() const { return bundle_kind & 0x4; }
 
 
 MemoryTrace::MemoryTrace(std::istream& tracefile) {
@@ -75,7 +52,7 @@ MemoryTrace::MemoryTrace(std::istream& tracefile) {
   }
 }
 
-MemoryTrace::MemoryTrace(std::istream&& tracefile) : MemoryTrace(tracefile) {}
+MemoryTrace::MemoryTrace(std::istream&& tracefile) : MemoryTrace(tracefile) { }
 
 const std::vector<MemoryRequest> MemoryTrace::getRequests() const { return requests; }
 
