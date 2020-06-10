@@ -2,7 +2,7 @@
 # Don't run `make` in this directory, but run `make test` in the root directory (above)
 
 TEST := scs-test
-SRC := $(filter-out ../main.cc, $(wildcard *.cc ../*.cc))
+SRC := $(filter-out ../main.cc ../TraceConverterMain.cc, $(wildcard *.cc ../*.cc))
 OBJ := $(patsubst %.cc,%.o,$(SRC))
 
 .PHONY: all clean
