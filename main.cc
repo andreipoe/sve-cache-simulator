@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -6,7 +7,7 @@
 #include <sstream>
 #include <string>
 
-#include <unistd.h>
+#include <getopt.h>
 
 #include "CacheConfig.hh"
 #include "CacheHierarchy.hh"
@@ -19,6 +20,10 @@
 #define EXIT_INVALID_ARGUMENTS 2
 #define EXIT_INVALID_CONFIG    3
 #define EXIT_INVALID_TRACE     4
+#define EXIT_UNKONWN_ENCODING  5
+
+#define OPT_ENCODING_TEXT   1
+#define OPT_ENCODING_BINARY 2
 
 class CommaNumPunct : public std::numpunct<char> {
  protected:
@@ -28,20 +33,44 @@ class CommaNumPunct : public std::numpunct<char> {
 
 void usage(int code = 1);
 
+TraceFileType guess_file_type(const std::string& fname);
 void run_and_print_stats(MemoryTrace const& trace, Cache& cache);
 void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache);
 
+
 int main(int argc, char* argv[]) {
   // TODO: consider using Lyra for argument parsing https://github.com/bfgroup/Lyra
-  signed char opt;
+  int opt;
   std::string config_fname;
+  bool encoding_provided { false };
+  TraceFileType trace_encoding {};
 
-  while ((opt = getopt(argc, argv, "c:")) != -1) {
+  struct option long_options[] = { { "config", required_argument, NULL, 'c' },
+                                   { "text", no_argument, NULL, OPT_ENCODING_TEXT },
+                                   { "binary", no_argument, NULL, OPT_ENCODING_BINARY },
+                                   { "help", no_argument, NULL, 'h' },
+                                   { 0, 0, 0, 0 } };
+
+  while ((opt = getopt_long(argc, argv, "c:h", long_options, NULL)) != -1) {
     switch (opt) {
       case 'c':
         config_fname = optarg;
         break;
 
+      case OPT_ENCODING_TEXT:
+        if (encoding_provided) usage(EXIT_INVALID_ARGUMENTS);
+        encoding_provided = true;
+        trace_encoding    = TraceFileType::Text;
+        break;
+      case OPT_ENCODING_BINARY:
+        if (encoding_provided) usage(EXIT_INVALID_ARGUMENTS);
+        encoding_provided = true;
+        trace_encoding    = TraceFileType::Binary;
+        break;
+
+      case 'h':
+        usage(0);
+        break;
       case '?':
       default:
         usage(EXIT_INVALID_OPTION);
@@ -61,12 +90,32 @@ int main(int argc, char* argv[]) {
   }
   std::cout << "Config file: " << config_fname << "\n";
 
+  if (!encoding_provided) trace_encoding = guess_file_type(argv[0]);
+
+  std::cout << "Trace file encoding: ";
+  switch (trace_encoding) {
+    case TraceFileType::Text:
+      std::cout << "text";
+      break;
+    case TraceFileType::Binary:
+      std::cout << "binary";
+      break;
+    default:
+      std::cout << "unknown\n";
+      std::exit(EXIT_UNKONWN_ENCODING);
+  }
+  if (encoding_provided)
+    std::cout << "\n";
+  else
+    std::cout << " (guessed)\n";
+
   std::ifstream tracefile { argv[0] };
   if (!tracefile.is_open()) {
     std::cout << "Cannot open trace file: " << argv[0] << "\n";
     std::exit(EXIT_INVALID_TRACE);
   }
-  MemoryTrace trace(tracefile);
+
+  MemoryTrace trace { tracefile, trace_encoding };
 
   std::cout.imbue({ std::locale(), new CommaNumPunct() });
 
@@ -78,8 +127,26 @@ int main(int argc, char* argv[]) {
 
 
 void usage(int code) {
-  std::cout << "Usage: scs -c CONFIG-FILE TRACE-FILE\n";
+  std::cout << "Usage:\n";
+  std::cout << "  scs --binary -c CONFIG-FILE TRACE-FILE\n";
+  std::cout << "  scs --text   -c CONFIG-FILE TRACE-FILE\n";
+  std::cout << "  scs --help\n";
   std::exit(code);
+}
+
+
+/* Guess if the given file is a text file */
+TraceFileType guess_file_type(const std::string& fname) {
+  std::ifstream f { fname };
+  const size_t check_count { 500 };
+
+  std::unique_ptr<char> data { new char[check_count + 1] };
+  f.read(data.get(), check_count);
+
+  if (std::memchr(data.get(), '\0', check_count) != NULL)
+    return TraceFileType::Binary;
+  else
+    return TraceFileType::Text;
 }
 
 
@@ -118,7 +185,8 @@ void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache) {
 
   std::cout << "CPU to L1 traffic: " << cache.getTraffic(0) << " bytes\n";
 
-  // TODO: Add flags to choose between plain and CSV output. Batch experiments should only output CSV
+  // TODO: Add flags to choose between plain and CSV output. Batch experiments should only
+  // output CSV
   csv_header << "CPU-L1-traffic,";
   csv_data << cache.getTraffic(0) << ',';
 
