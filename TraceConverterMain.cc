@@ -18,10 +18,13 @@ int main(int argc, char* argv[]) {
   std::string out_fname;
   bool force { false };
 
-  while ((opt = getopt(argc, argv, "fo:")) != -1) {
+  while ((opt = getopt(argc, argv, "fho:")) != -1) {
     switch (opt) {
       case 'f':
         force = true;
+        break;
+      case 'h':
+        usage(0);
         break;
       case 'o':
         out_fname = optarg;

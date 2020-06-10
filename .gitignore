@@ -1,6 +1,7 @@
 *.o
 *.gch
 scs
+convert-trace
 
 *.log
 

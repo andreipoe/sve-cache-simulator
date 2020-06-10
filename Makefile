@@ -64,16 +64,25 @@ endif
 LDFLAGS = $(LDFLAGS_$(COMPILER))
 
 TARGET := scs
-SRC := $(wildcard *.cc)
+SRC := $(filter-out TraceConverterMain.cc, $(wildcard *.cc))
 OBJ := $(patsubst %.cc,%.o,$(SRC))
 # HDR := $(patsubst %.cc,%.hh,$(SRC))
 
+CONVERTER_TARGET := convert-trace
+CONVERTER_SRC := MemoryTrace.cc TraceConverter.cc TraceConverterMain.cc
+CONVERTER_OBJ := $(patsubst %.cc,%.o,$(CONVERTER_SRC))
 
-.PHONY: all test clean
 
-all: $(TARGET)
+.PHONY: all converter test clean
+
+all: $(TARGET) converter
+
+converter: $(CONVERTER_TARGET)
 
 $(TARGET): $(OBJ)
+	$(CXX) $(LDFLAGS) -o $@ $^
+
+$(CONVERTER_TARGET): $(CONVERTER_OBJ)
 	$(CXX) $(LDFLAGS) -o $@ $^
 
 test: $(OBJ)
