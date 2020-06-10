@@ -48,9 +48,20 @@ src_common = files([
 ])
 src_main = files('main.cc')
 main_exe = executable('scs', src_common, src_main,
-                      cpp_args: cpp_args,
-                      link_args: link_args,
-                      build_rpath: rpath)
+    cpp_args: cpp_args,
+    link_args: link_args,
+    build_rpath: rpath)
+
+
+# ------- Trace Converter -------
+src_converter_common = files('TraceConverter.cc')
+src_converter_main = files([
+  'MemoryTrace.cc',
+  'TraceConverterMain.cc'])
+converter_exe = executable('convert-trace', src_converter_common, src_converter_main,
+    cpp_args: cpp_args,
+    link_args: link_args,
+    build_rpath: rpath)
 
 
 # ------- Tests -------
@@ -63,11 +74,12 @@ src_test = files([
   'test/MemoryTraceTest.cc',
   'test/SetAssociativeCacheTest.cc',
   'test/RandomAddressGenerator.cc',
+  'test/TraceConverterTest.cc',
   'test/test.cc',
   'test/utils.cc'
 ])
 test_exe = executable('scs-test', src_test,
-                      objects: main_exe.extract_objects(src_common),
+                      objects: [main_exe.extract_objects(src_common), converter_exe.extract_objects(src_converter_common)],
                       cpp_args: cpp_args,
                       link_args: link_args,
                       build_rpath: rpath)

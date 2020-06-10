@@ -62,3 +62,17 @@ TEST_CASE("Empty lines in trace files are skipped over", "[trace][regression]") 
   REQUIRE(addresses[0] == 0x4000847ad870);
   REQUIRE(addresses[1] == 0x4000863fb8f0);
 }
+
+TEST_CASE("Writing and parsing binary trace files works", "[trace]") {
+  std::istringstream ss {
+    "4016124, 0, 0, 1, 64, 0x6e0000, 0x40e370\n"
+    "4016126, 0, 0, 0, 64, 0x630a00, 0x40e360\n"
+  };
+  const MemoryTrace trace { ss };
+
+  const std::string fname { "testout.bin" };
+  trace.write_binary(fname);
+
+  const MemoryTrace binary_trace { std::ifstream { fname }, TraceFileType::Binary };
+  REQUIRE(trace_equals(trace, binary_trace));
+}

@@ -15,19 +15,38 @@ struct MemoryRequest {
   bool is_bundle_start() const;
   bool is_bundle_middle() const;
   bool is_bundle_end() const;
+
+  friend std::ostream& operator<<(std::ostream& stream, const MemoryRequest& req) {
+    stream << "Request{"
+           << "tid: " << req.tid << ", bundle_kind: " << req.bundle_kind
+           << ", is_write: " << req.is_write << ", size: " << req.size << ", address: 0x"
+           << std::hex << req.address << ", pc: 0x" << req.pc << "}" << std::dec;
+    return stream;
+  }
 };
+
+
+enum class TraceFileType { Text, Binary };
 
 /* Represents an ArmIE memory trace */
 class MemoryTrace {
   std::vector<MemoryRequest> requests;
   std::vector<uint64_t> requestAddresses;
 
+  inline void construct_from_text_(std::istream& tracefile);
+  inline void construct_from_binary_(std::istream& tracefile);
+
  public:
   /* Construct a MemoryTrace object from a trace file */
-  explicit MemoryTrace(std::istream& tracefile);
-  explicit MemoryTrace(std::istream&& tracefile);
+  explicit MemoryTrace(std::istream& tracefile,
+                       TraceFileType ftype = TraceFileType::Text);
+  explicit MemoryTrace(std::istream&& tracefile,
+                       TraceFileType ftype = TraceFileType::Text);
 
   const std::vector<MemoryRequest> getRequests() const;
   const std::vector<uint64_t> getRequestAddresses() const;
   size_t getLength() const;
+
+  /* Save this trace to a binary file */
+  void write_binary(const std::string fname) const;
 };

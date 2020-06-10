@@ -51,6 +51,9 @@ std::unique_ptr<Cache> make_default_cache(CacheType type);
  * parameters */
 std::unique_ptr<CacheHierarchy> make_default_hierarchy(CacheType type);
 
+/* Check whether two memory traces represent the same sequence of memory requests */
+bool trace_equals(const MemoryTrace& trace1, const MemoryTrace& trace2);
+
 
 namespace TestTraces {
 const std::string BUNDLE =

@@ -65,10 +65,28 @@ std::unique_ptr<Cache> make_default_cache(CacheType type) {
 }
 
 std::unique_ptr<CacheHierarchy> make_default_hierarchy(CacheType type) {
-  std::vector<CacheConfig> configs(DEFAULT_HIERARCHY_SIZE, get_default_cache_config(type));
-  for(int level = DEFAULT_HIERARCHY_SIZE - 1; level >= 0; level--)
+  std::vector<CacheConfig> configs(DEFAULT_HIERARCHY_SIZE,
+                                   get_default_cache_config(type));
+  for (int level = DEFAULT_HIERARCHY_SIZE - 1; level >= 0; level--)
     configs[level].size /= (DEFAULT_HIERARCHY_SIZE - level);
 
 
   return std::make_unique<CacheHierarchy>(configs);
+}
+
+bool trace_equals(const MemoryTrace& trace1, const MemoryTrace& trace2) {
+  if (trace1.getLength() != trace2.getLength()) return false;
+
+  const auto requests1 = trace1.getRequests();
+  const auto requests2 = trace2.getRequests();
+  for (size_t i = 0; i < requests1.size(); i++) {
+    const auto r1 = requests1[i];
+    const auto r2 = requests2[i];
+
+    if (r1.tid != r2.tid || r1.size != r2.size || r1.is_write != r2.is_write ||
+        r1.bundle_kind != r2.bundle_kind || r1.address != r2.address || r1.pc != r2.pc)
+      return false;
+  }
+
+  return true;
 }
