@@ -30,6 +30,8 @@ namespace {
 #define OPT_ENCODING_TEXT   1
 #define OPT_ENCODING_BINARY 2
 
+#define SEPARATOR "----------"
+
 enum OutputFormatBits {
   BIT_OUTPUT_TEXT,
   BIT_OUTPUT_CSV,
@@ -52,10 +54,12 @@ void usage(int code) {
   std::cout << "  scs --text   [OPTIONS] -c CONFIG-FILE TRACE-FILE\n";
   std::cout << "  scs --help\n\n";
   std::cout << "Options:\n";
+  // TODO: add a batch file parameter, which takes a list of config files
+  // std::cout << "  -b BATCH-FILE                 The cache configuration file. Required at least once.\n";
+  // std::cout << "                                May be specified more than once for batched runs.\n";
   std::cout << "  -c CONFIG-FILE                The cache configuration file. Required at least once.\n";
-  std::cout << "                                May be specified more than once for batched runs.\n";
-  std::cout << "  -f, --format {text,csv,both}  Set the output format. Only 'csv' can be used with batches.\n";
-  std::cout << "                                Default: 'both' for single runs, 'csv' for batches.\n";
+  std::cout << "                                May be specified more than once for batch runs.\n";
+  std::cout << "  -f, --format {text,csv,both}  Set the output format. Default: 'both' for single runs, 'csv' for batches.\n\n";
   std::cout << "  -t, --timings                 Report run times of the main stages.\n";
   // clang-format on
 
@@ -65,17 +69,28 @@ void usage(int code) {
 }  // namespace
 
 TraceFileType guess_file_type(const std::string& fname);
+std::string_view config_name_from_fname(std::string_view fname);
 void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache,
                          const OutputFormat& fmt, std::string_view config_fname);
 
 using timestamp = std::chrono::time_point<std::chrono::high_resolution_clock>;
-void print_timings(timestamp start, timestamp parse_end, timestamp simulation_end);
+struct SimulationTime {
+  const std::string_view sim_name;
+  const timestamp sim_start, sim_end;
+
+  explicit SimulationTime(std::string_view sim_name, const timestamp sim_start,
+                          const timestamp sim_end)
+      : sim_name(sim_name), sim_start(sim_start), sim_end(sim_end) { }
+};
+
+void print_timings(timestamp start, timestamp parse_end,
+                   const std::vector<SimulationTime> simulations);
 
 
 int main(int argc, char* argv[]) {
   int opt;
-  std::string config_fname;
-  bool encoding_provided { false }, enable_timing { false };
+  std::vector<std::string> config_fnames;
+  bool encoding_provided { false }, enable_timing { false }, opt_f_used { false };
   TraceFileType trace_encoding {};
   OutputFormat output_format { (1 << OUTPUT_BIT_COUNT) - 1 };
 
@@ -90,7 +105,7 @@ int main(int argc, char* argv[]) {
   while ((opt = getopt_long(argc, argv, "c:f:th", long_options, NULL)) != -1) {
     switch (opt) {
       case 'c':
-        config_fname = optarg;
+        config_fnames.emplace_back(optarg);
         break;
 
       case OPT_ENCODING_TEXT:
@@ -105,6 +120,7 @@ int main(int argc, char* argv[]) {
         break;
 
       case 'f':
+        opt_f_used = true;
         if (!strcmp(optarg, "text"))
           output_format.reset(BIT_OUTPUT_CSV);
         else if (!strcmp(optarg, "csv"))
@@ -127,17 +143,14 @@ int main(int argc, char* argv[]) {
   argc -= optind;
   argv += optind;
 
-  if (config_fname.empty() || argc < 1) {
-    usage(EXIT_INVALID_ARGUMENTS);
-  }
+  if (config_fnames.empty() || argc < 1) usage(EXIT_INVALID_ARGUMENTS);
+
+  // In batch mode, if text output hasn't been request specifically, use CSV output by
+  // default
+  if (config_fnames.size() > 1 && !opt_f_used)
+    output_format.reset(BIT_OUTPUT_TEXT);
 
   std::ostringstream info_output;
-
-  std::ifstream config_file { config_fname };
-  if (!config_file.is_open()) {
-    std::cout << "Cannot open config file: " << config_fname << "\n";
-    std::exit(EXIT_INVALID_CONFIG);
-  }
 
   if (!encoding_provided) trace_encoding = guess_file_type(argv[0]);
 
@@ -172,12 +185,42 @@ int main(int argc, char* argv[]) {
 
   const timestamp t_parse_end = std::chrono::high_resolution_clock::now();
 
-  CacheHierarchy cache { std::move(config_file) };
-  run_and_print_stats(trace, cache, output_format, config_fname);
+  if (output_format[BIT_OUTPUT_TEXT]) {
+    const auto addresses = trace.getRequestAddresses();
+    std::set<uint64_t> unique_addresses(addresses.begin(), addresses.end());
+    std::cout << "Trace has " << trace.getLength() << " entries.\n";
+    std::cout << "Seen " << unique_addresses.size() << " unique addresses.\n";
+  }
 
-  const timestamp t_sim_end = std::chrono::high_resolution_clock::now();
+  // TODO: When running a batch, each config can be run in a separate thread
+  std::vector<std::string_view> configs_not_found;
+  std::vector<SimulationTime> simulation_times;
+  auto t_previous = std::chrono::high_resolution_clock::now();
+  for (const auto& config_fname : config_fnames) {
+    std::ifstream config_file { config_fname };
+    if (!config_file.is_open()) {
+      std::cout << "Cannot open config file: " << config_fname << "\n";
+      configs_not_found.push_back(config_fname);
+      continue;
+    }
 
-  if (enable_timing) print_timings(t_start, t_parse_end, t_sim_end);
+    CacheHierarchy cache { std::move(config_file) };
+    run_and_print_stats(trace, cache, output_format, config_fname);
+
+    const auto t_sim_end = std::chrono::high_resolution_clock::now();
+    simulation_times.emplace_back(config_name_from_fname(config_fname), t_previous,
+                                  t_sim_end);
+    t_previous = t_sim_end;
+  }
+
+  if (enable_timing) print_timings(t_start, t_parse_end, simulation_times);
+
+  if (configs_not_found.size() > 0) {
+    std::cerr << "Config files not found: ";
+    for (auto f : configs_not_found) std::cerr << f << " ";
+    std::cerr << "\n";
+    std::exit(EXIT_INVALID_CONFIG);
+  }
 
   return 0;
 }
@@ -197,32 +240,37 @@ TraceFileType guess_file_type(const std::string& fname) {
     return TraceFileType::Text;
 }
 
+/* Makes a config name from a given file name by taking the basename and removing the
+ * extension */
+std::string_view config_name_from_fname(std::string_view fname) {
+  const auto last_slash  = fname.rfind('/');
+  const auto last_dot    = fname.rfind('.');
+  const auto config_name = fname.substr(last_slash + 1, last_dot - last_slash - 1);
+
+  return config_name;
+}
+
 
 void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache,
                          const OutputFormat& fmt, std::string_view config_fname) {
   cache.touch(trace.getRequests());
 
+  // TODO: Output needs to be kept in order if running simulations in parallel
   std::ostringstream csv_data, csv_header;
-  const auto addresses = trace.getRequestAddresses();
 
   if (fmt[BIT_OUTPUT_TEXT]) {
-    std::cout.imbue({ std::locale(), new CommaNumPunct() });
-    std::cout << "Config file: " << config_fname << "\n";
+    std::cout << SEPARATOR "\n";
 
-    std::set<uint64_t> unique_addresses(addresses.begin(), addresses.end());
-    std::cout << "Trace has " << trace.getLength() << " entries.\n";
-    std::cout << "Seen " << unique_addresses.size() << " unique addresses.\n";
+    std::cout.imbue({ std::locale(), new CommaNumPunct() });
+    std::cout << "Config file: " << config_fname << "\n\n";
 
     std::cout << "CPU to L1 traffic: " << cache.getTraffic(0) << " bytes\n";
   }
 
   // The config name is the base file name without the extension
-  const auto last_slash  = config_fname.rfind('/');
-  const auto last_dot    = config_fname.rfind('.');
-  const auto config_name = config_fname.substr(last_slash + 1, last_dot - last_slash - 1);
 
   csv_header << "config,CPU-L1-traffic,";
-  csv_data << config_name << ',' << cache.getTraffic(0) << ',';
+  csv_data << config_name_from_fname(config_fname) << ',' << cache.getTraffic(0) << ',';
 
   std::vector<std::string> level_names(cache.nlevels() + 2);
   for (int level = 1; level <= cache.nlevels() + 1; level++)
@@ -261,7 +309,7 @@ void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache,
     total_bundle_ops += b.second.total_ops;
   }
   const auto bundle_ratio =
-      static_cast<double>(total_bundle_ops) / addresses.size() * 100;
+      static_cast<double>(total_bundle_ops) / trace.getLength() * 100;
 
   if (fmt[BIT_OUTPUT_TEXT]) {
     std::cout << "\n";
@@ -272,25 +320,33 @@ void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache,
               << std::setprecision(2) << bundle_ratio << "%)\n";
   }
 
+  // TODO: In batch mode, output the header only once, keeping in mind that it might differ per configuration
   if (fmt[BIT_OUTPUT_CSV]) {
-    if (fmt[BIT_OUTPUT_TEXT]) std::cout << "----------\n";
+    if (fmt[BIT_OUTPUT_TEXT]) std::cout << SEPARATOR "\n";
     std::cout << csv_header.str() << "\n" << csv_data.str() << "\n";
   }
 }
 
 
-void print_timings(timestamp start, timestamp parse_end, timestamp simulation_end) {
-  std::cout << "----------\n" << std::setprecision(2);
+void print_timings(timestamp start, timestamp parse_end,
+                   const std::vector<SimulationTime> simulation_times) {
+  std::cout << SEPARATOR "\n" << std::setprecision(2);
 
-  const auto total_time = std::chrono::duration<double>(simulation_end - start).count();
-  std::cout << "Simulated 1 configuration in " << total_time << " s\n";
+  const auto t_finish   = simulation_times[simulation_times.size() - 1].sim_end;
+  const auto total_time = std::chrono::duration<double>(t_finish - start).count();
+  std::cout << "Simulated " << simulation_times.size() << " configurations in "
+            << total_time << " s\n";
 
   const auto parse_time     = std::chrono::duration<double>(parse_end - start).count();
   const auto parse_time_pct = (parse_time / total_time) * 100;
   std::cout << "  Reading trace file took " << parse_time << " s (" << parse_time_pct
             << "%)\n";
 
-  const auto sim_time = std::chrono::duration<double>(simulation_end - parse_end).count();
-  const auto sim_time_pct = (sim_time / total_time) * 100;
-  std::cout << "  Simulation took " << sim_time << " s (" << sim_time_pct << "%)\n";
+  for (const auto& sim : simulation_times) {
+    const auto sim_time =
+        std::chrono::duration<double>(sim.sim_end - sim.sim_start).count();
+    const auto sim_time_pct = (sim_time / total_time) * 100;
+    std::cout << "  Simulating " << sim.sim_name << " took " << sim_time << " s ("
+              << sim_time_pct << "%)\n";
+  }
 }
