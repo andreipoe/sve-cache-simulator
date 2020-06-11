@@ -82,6 +82,9 @@ void MemoryTrace::construct_from_binary_(std::istream& tracefile) {
   size_t elements;
   tracefile.read(reinterpret_cast<char*>(&elements), sizeof(size_t));
 
+  requests.reserve(elements);
+  requestAddresses.reserve(elements);
+
   for (size_t i = 0; i < elements; i++) {
     int tid, size, bundle_kind;
     bool is_write;
