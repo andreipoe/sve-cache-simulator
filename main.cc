@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <bitset>
 #include <chrono>
 #include <cstring>
 #include <fstream>
@@ -17,14 +18,26 @@
 #include "MemoryTrace.hh"
 #include "SetAssociativeCache.hh"
 
+namespace {
+
 #define EXIT_INVALID_OPTION    1
 #define EXIT_INVALID_ARGUMENTS 2
 #define EXIT_INVALID_CONFIG    3
 #define EXIT_INVALID_TRACE     4
 #define EXIT_UNKOWN_ENCODING   5
+#define EXIT_OLD_CONFIG        6
 
 #define OPT_ENCODING_TEXT   1
 #define OPT_ENCODING_BINARY 2
+
+enum OutputFormatBits {
+  BIT_OUTPUT_TEXT,
+  BIT_OUTPUT_CSV,
+
+  OUTPUT_BIT_COUNT
+};
+
+using OutputFormat = std::bitset<OUTPUT_BIT_COUNT>;
 
 class CommaNumPunct : public std::numpunct<char> {
  protected:
@@ -32,31 +45,50 @@ class CommaNumPunct : public std::numpunct<char> {
   virtual std::string do_grouping() const { return "\03"; }
 };
 
-void usage(int code = 1);
+void usage(int code) {
+  // clang-format off
+  std::cout << "Usage:\n";
+  std::cout << "  scs --binary [OPTIONS] -c CONFIG-FILE TRACE-FILE\n";
+  std::cout << "  scs --text   [OPTIONS] -c CONFIG-FILE TRACE-FILE\n";
+  std::cout << "  scs --help\n\n";
+  std::cout << "Options:\n";
+  std::cout << "  -c CONFIG-FILE                The cache configuration file. Required at least once.\n";
+  std::cout << "                                May be specified more than once for batched runs.\n";
+  std::cout << "  -f, --format {text,csv,both}  Set the output format. Only 'csv' can be used with batches.\n";
+  std::cout << "                                Default: 'both' for single runs, 'csv' for batches.\n";
+  std::cout << "  -t, --timings                 Report run times of the main stages.\n";
+  // clang-format on
+
+  std::exit(code);
+}
+
+}  // namespace
 
 TraceFileType guess_file_type(const std::string& fname);
 void run_and_print_stats(MemoryTrace const& trace, Cache& cache);
-void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache);
+void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache,
+                         const OutputFormat& fmt, std::string_view config_fname);
 
 using timestamp = std::chrono::time_point<std::chrono::high_resolution_clock>;
 void print_timings(timestamp start, timestamp parse_end, timestamp simulation_end);
 
 
 int main(int argc, char* argv[]) {
-  // TODO: consider using Lyra for argument parsing https://github.com/bfgroup/Lyra
   int opt;
   std::string config_fname;
   bool encoding_provided { false }, enable_timing { false };
   TraceFileType trace_encoding {};
+  OutputFormat output_format { (1 << OUTPUT_BIT_COUNT) - 1 };
 
   struct option long_options[] = { { "config", required_argument, NULL, 'c' },
                                    { "text", no_argument, NULL, OPT_ENCODING_TEXT },
                                    { "binary", no_argument, NULL, OPT_ENCODING_BINARY },
+                                   { "format", required_argument, NULL, 'f' },
                                    { "timings", no_argument, NULL, 't' },
                                    { "help", no_argument, NULL, 'h' },
                                    { 0, 0, 0, 0 } };
 
-  while ((opt = getopt_long(argc, argv, "c:th", long_options, NULL)) != -1) {
+  while ((opt = getopt_long(argc, argv, "c:f:th", long_options, NULL)) != -1) {
     switch (opt) {
       case 'c':
         config_fname = optarg;
@@ -73,6 +105,14 @@ int main(int argc, char* argv[]) {
         trace_encoding    = TraceFileType::Binary;
         break;
 
+      case 'f':
+        if (!strcmp(optarg, "text"))
+          output_format.reset(BIT_OUTPUT_CSV);
+        else if (!strcmp(optarg, "csv"))
+          output_format.reset(BIT_OUTPUT_TEXT);
+        else if (strcmp(optarg, "both") != 0)
+          usage(EXIT_INVALID_ARGUMENTS);
+        break;
       case 't':
         enable_timing = true;
         break;
@@ -92,31 +132,34 @@ int main(int argc, char* argv[]) {
     usage(EXIT_INVALID_ARGUMENTS);
   }
 
+  std::ostringstream info_output;
+
   std::ifstream config_file { config_fname };
   if (!config_file.is_open()) {
     std::cout << "Cannot open config file: " << config_fname << "\n";
     std::exit(EXIT_INVALID_CONFIG);
   }
-  std::cout << "Config file: " << config_fname << "\n";
 
   if (!encoding_provided) trace_encoding = guess_file_type(argv[0]);
 
-  std::cout << "Trace file encoding: ";
+  info_output << "Trace file encoding: ";
   switch (trace_encoding) {
     case TraceFileType::Text:
-      std::cout << "text";
+      info_output << "text";
       break;
     case TraceFileType::Binary:
-      std::cout << "binary";
+      info_output << "binary";
       break;
     default:
-      std::cout << "unknown\n";
+      info_output << "unknown\n";
       std::exit(EXIT_UNKOWN_ENCODING);
   }
   if (encoding_provided)
-    std::cout << "\n";
+    info_output << "\n";
   else
-    std::cout << " (guessed)\n";
+    info_output << " (guessed)\n";
+
+  if (output_format[BIT_OUTPUT_TEXT]) std::cout << info_output.str();
 
   std::ifstream tracefile { argv[0] };
   if (!tracefile.is_open()) {
@@ -130,28 +173,14 @@ int main(int argc, char* argv[]) {
 
   const timestamp t_parse_end = std::chrono::high_resolution_clock::now();
 
-  std::cout.imbue({ std::locale(), new CommaNumPunct() });
-
   CacheHierarchy cache { std::move(config_file) };
-  run_and_print_stats(trace, cache);
+  run_and_print_stats(trace, cache, output_format, config_fname);
 
   const timestamp t_sim_end = std::chrono::high_resolution_clock::now();
 
-  if(enable_timing) {
-    std::cout << "\n";
-    print_timings(t_start, t_parse_end, t_sim_end);
-  }
+  if (enable_timing) print_timings(t_start, t_parse_end, t_sim_end);
 
   return 0;
-}
-
-
-void usage(int code) {
-  std::cout << "Usage:\n";
-  std::cout << "  scs --binary -c CONFIG-FILE TRACE-FILE\n";
-  std::cout << "  scs --text   -c CONFIG-FILE TRACE-FILE\n";
-  std::cout << "  scs --help\n";
-  std::exit(code);
 }
 
 
@@ -172,6 +201,10 @@ TraceFileType guess_file_type(const std::string& fname) {
 
 // Deprecated
 void run_and_print_stats(MemoryTrace const& trace, Cache& cache) {
+  std::cout << "Running a single cache is not supported any more.\n";
+  std::cout << "Convert your configuration into a hierarchy.\n";
+  std::exit(EXIT_OLD_CONFIG);
+
   auto addresses = trace.getRequestAddresses();
   cache.touch(addresses);
 
@@ -193,22 +226,31 @@ void run_and_print_stats(MemoryTrace const& trace, Cache& cache) {
   std::cout << "Evictions: " << evictions << "\n";
 }
 
-void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache) {
+void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache,
+                         const OutputFormat& fmt, std::string_view config_fname) {
   cache.touch(trace.getRequests());
 
   std::ostringstream csv_data, csv_header;
-
   const auto addresses = trace.getRequestAddresses();
-  std::set<uint64_t> unique_addresses(addresses.begin(), addresses.end());
-  std::cout << "Trace has " << trace.getLength() << " entries.\n";
-  std::cout << "Seen " << unique_addresses.size() << " unique addresses.\n\n";
 
-  std::cout << "CPU to L1 traffic: " << cache.getTraffic(0) << " bytes\n";
+  if (fmt[BIT_OUTPUT_TEXT]) {
+    std::cout.imbue({ std::locale(), new CommaNumPunct() });
+    std::cout << "Config file: " << config_fname << "\n";
 
-  // TODO: Add flags to choose between plain and CSV output. Batch experiments should only
-  // output CSV
-  csv_header << "CPU-L1-traffic,";
-  csv_data << cache.getTraffic(0) << ',';
+    std::set<uint64_t> unique_addresses(addresses.begin(), addresses.end());
+    std::cout << "Trace has " << trace.getLength() << " entries.\n";
+    std::cout << "Seen " << unique_addresses.size() << " unique addresses.\n";
+
+    std::cout << "CPU to L1 traffic: " << cache.getTraffic(0) << " bytes\n";
+  }
+
+  // The config name is the base file name without the extension
+  const auto last_slash  = config_fname.rfind('/');
+  const auto last_dot    = config_fname.rfind('.');
+  const auto config_name = config_fname.substr(last_slash + 1, last_dot - last_slash - 1);
+
+  csv_header << "config,CPU-L1-traffic,";
+  csv_data << config_name << ',' << cache.getTraffic(0) << ',';
 
   std::vector<std::string> level_names(cache.nlevels() + 2);
   for (int level = 1; level <= cache.nlevels() + 1; level++)
@@ -222,15 +264,17 @@ void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache) {
     const auto pct_hits   = (static_cast<double>(hits) / total) * 100.0;
     const auto pct_misses = 100.0 - pct_hits;
 
-    std::cout << "\n";
-    std::cout << level_names[level] << " Total accesses: " << total << "\n";
-    std::cout << level_names[level] << " Hits: " << hits << " (" << std::fixed
-              << std::setprecision(2) << pct_hits << "%)\n";
-    std::cout << level_names[level] << " Misses: " << misses << " (" << std::fixed
-              << std::setprecision(2) << pct_misses << "%)\n";
-    std::cout << level_names[level] << " Evictions: " << evictions << "\n";
-    std::cout << level_names[level] << " to " << level_names[level + 1]
-              << " traffic: " << cache.getTraffic(level) << " bytes\n";
+    if (fmt[BIT_OUTPUT_TEXT]) {
+      std::cout << "\n";
+      std::cout << level_names[level] << " Total accesses: " << total << "\n";
+      std::cout << level_names[level] << " Hits: " << hits << " (" << std::fixed
+                << std::setprecision(2) << pct_hits << "%)\n";
+      std::cout << level_names[level] << " Misses: " << misses << " (" << std::fixed
+                << std::setprecision(2) << pct_misses << "%)\n";
+      std::cout << level_names[level] << " Evictions: " << evictions << "\n";
+      std::cout << level_names[level] << " to " << level_names[level + 1]
+                << " traffic: " << cache.getTraffic(level) << " bytes\n";
+    }
 
     csv_header << level_names[level] << "-miss-pct," << level_names[level]
                << "-evictions," << level_names[level] << '-' << level_names[level + 1]
@@ -247,19 +291,24 @@ void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache) {
   const auto bundle_ratio =
       static_cast<double>(total_bundle_ops) / addresses.size() * 100;
 
-  std::cout << "\n";
-  std::cout << "Total scatter/gather bundles simulated: " << total_bundles << "\n";
-  std::cout << "Total unique scatter/gather bundles encountered: " << bundles.size()
-            << "\n";
-  std::cout << "Total ops part of scatters/gathers: " << total_bundle_ops << " ("
-            << std::setprecision(2) << bundle_ratio << "%)\n";
+  if (fmt[BIT_OUTPUT_TEXT]) {
+    std::cout << "\n";
+    std::cout << "Total scatter/gather bundles simulated: " << total_bundles << "\n";
+    std::cout << "Total unique scatter/gather bundles encountered: " << bundles.size()
+              << "\n";
+    std::cout << "Total ops part of scatters/gathers: " << total_bundle_ops << " ("
+              << std::setprecision(2) << bundle_ratio << "%)\n";
+  }
 
-  std::cout << "\n" << csv_header.str() << "\n" << csv_data.str() << "\n";
+  if (fmt[BIT_OUTPUT_CSV]) {
+    if (fmt[BIT_OUTPUT_TEXT]) std::cout << "----------\n";
+    std::cout << csv_header.str() << "\n" << csv_data.str() << "\n";
+  }
 }
 
 
 void print_timings(timestamp start, timestamp parse_end, timestamp simulation_end) {
-  std::cout << std::setprecision(2);
+  std::cout << "----------\n" << std::setprecision(2);
 
   const auto total_time = std::chrono::duration<double>(simulation_end - start).count();
   std::cout << "Simulated 1 configuration in " << total_time << " s\n";
