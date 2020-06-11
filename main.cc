@@ -65,7 +65,6 @@ void usage(int code) {
 }  // namespace
 
 TraceFileType guess_file_type(const std::string& fname);
-void run_and_print_stats(MemoryTrace const& trace, Cache& cache);
 void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache,
                          const OutputFormat& fmt, std::string_view config_fname);
 
@@ -198,33 +197,6 @@ TraceFileType guess_file_type(const std::string& fname) {
     return TraceFileType::Text;
 }
 
-
-// Deprecated
-void run_and_print_stats(MemoryTrace const& trace, Cache& cache) {
-  std::cout << "Running a single cache is not supported any more.\n";
-  std::cout << "Convert your configuration into a hierarchy.\n";
-  std::exit(EXIT_OLD_CONFIG);
-
-  auto addresses = trace.getRequestAddresses();
-  cache.touch(addresses);
-
-  std::set<uint64_t> unique_addresses(addresses.begin(), addresses.end());
-  std::cout << "Trace has " << trace.getLength() << " entries.\n";
-  std::cout << "Seen " << unique_addresses.size() << " unique addresses.\n\n";
-
-  const auto hits       = cache.getHits();
-  const auto misses     = cache.getMisses();
-  const auto total      = cache.getTotalAccesses();
-  const auto evictions  = cache.getEvictions();
-  const auto pct_hits   = (static_cast<double>(hits) / total) * 100.0;
-  const auto pct_misses = 100.0 - pct_hits;
-  std::cout << "Total accesses: " << total << "\n";
-  std::cout << "Hits: " << hits << " (" << std::fixed << std::setprecision(2) << pct_hits
-            << "%)\n";
-  std::cout << "Misses: " << misses << " (" << std::fixed << std::setprecision(2)
-            << pct_misses << "%)\n";
-  std::cout << "Evictions: " << evictions << "\n";
-}
 
 void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache,
                          const OutputFormat& fmt, std::string_view config_fname) {
