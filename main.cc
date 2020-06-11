@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <chrono>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
@@ -20,7 +21,7 @@
 #define EXIT_INVALID_ARGUMENTS 2
 #define EXIT_INVALID_CONFIG    3
 #define EXIT_INVALID_TRACE     4
-#define EXIT_UNKONWN_ENCODING  5
+#define EXIT_UNKOWN_ENCODING   5
 
 #define OPT_ENCODING_TEXT   1
 #define OPT_ENCODING_BINARY 2
@@ -37,21 +38,25 @@ TraceFileType guess_file_type(const std::string& fname);
 void run_and_print_stats(MemoryTrace const& trace, Cache& cache);
 void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache);
 
+using timestamp = std::chrono::time_point<std::chrono::high_resolution_clock>;
+void print_timings(timestamp start, timestamp parse_end, timestamp simulation_end);
+
 
 int main(int argc, char* argv[]) {
   // TODO: consider using Lyra for argument parsing https://github.com/bfgroup/Lyra
   int opt;
   std::string config_fname;
-  bool encoding_provided { false };
+  bool encoding_provided { false }, enable_timing { false };
   TraceFileType trace_encoding {};
 
   struct option long_options[] = { { "config", required_argument, NULL, 'c' },
                                    { "text", no_argument, NULL, OPT_ENCODING_TEXT },
                                    { "binary", no_argument, NULL, OPT_ENCODING_BINARY },
+                                   { "timings", no_argument, NULL, 't' },
                                    { "help", no_argument, NULL, 'h' },
                                    { 0, 0, 0, 0 } };
 
-  while ((opt = getopt_long(argc, argv, "c:h", long_options, NULL)) != -1) {
+  while ((opt = getopt_long(argc, argv, "c:th", long_options, NULL)) != -1) {
     switch (opt) {
       case 'c':
         config_fname = optarg;
@@ -66,6 +71,10 @@ int main(int argc, char* argv[]) {
         if (encoding_provided) usage(EXIT_INVALID_ARGUMENTS);
         encoding_provided = true;
         trace_encoding    = TraceFileType::Binary;
+        break;
+
+      case 't':
+        enable_timing = true;
         break;
 
       case 'h':
@@ -102,7 +111,7 @@ int main(int argc, char* argv[]) {
       break;
     default:
       std::cout << "unknown\n";
-      std::exit(EXIT_UNKONWN_ENCODING);
+      std::exit(EXIT_UNKOWN_ENCODING);
   }
   if (encoding_provided)
     std::cout << "\n";
@@ -115,12 +124,23 @@ int main(int argc, char* argv[]) {
     std::exit(EXIT_INVALID_TRACE);
   }
 
+  const timestamp t_start = std::chrono::high_resolution_clock::now();
+
   MemoryTrace trace { tracefile, trace_encoding };
+
+  const timestamp t_parse_end = std::chrono::high_resolution_clock::now();
 
   std::cout.imbue({ std::locale(), new CommaNumPunct() });
 
   CacheHierarchy cache { std::move(config_file) };
   run_and_print_stats(trace, cache);
+
+  const timestamp t_sim_end = std::chrono::high_resolution_clock::now();
+
+  if(enable_timing) {
+    std::cout << "\n";
+    print_timings(t_start, t_parse_end, t_sim_end);
+  }
 
   return 0;
 }
@@ -235,4 +255,21 @@ void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache) {
             << std::setprecision(2) << bundle_ratio << "%)\n";
 
   std::cout << "\n" << csv_header.str() << "\n" << csv_data.str() << "\n";
+}
+
+
+void print_timings(timestamp start, timestamp parse_end, timestamp simulation_end) {
+  std::cout << std::setprecision(2);
+
+  const auto total_time = std::chrono::duration<double>(simulation_end - start).count();
+  std::cout << "Simulated 1 configuration in " << total_time << " s\n";
+
+  const auto parse_time     = std::chrono::duration<double>(parse_end - start).count();
+  const auto parse_time_pct = (parse_time / total_time) * 100;
+  std::cout << "  Reading trace file took " << parse_time << " s (" << parse_time_pct
+            << "%)\n";
+
+  const auto sim_time = std::chrono::duration<double>(simulation_end - parse_end).count();
+  const auto sim_time_pct = (sim_time / total_time) * 100;
+  std::cout << "  Simulation took " << sim_time << " s (" << sim_time_pct << "%)\n";
 }
