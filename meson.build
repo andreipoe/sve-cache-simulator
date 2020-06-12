@@ -8,7 +8,12 @@ rpath = ''
 
 build_type = get_option('buildtype')
 if build_type == 'release'
-  cpp_args = ['-ffast-math']
+  cpp_args += ['-ffast-math']
+
+  if get_option('parallel')
+    cpp_args  += ['-fopenmp']
+    link_args += ['-fopenmp']
+  endif
 
   arch = get_option('arch')
   if target_machine.cpu_family() == 'aarch64'
@@ -25,13 +30,13 @@ if build_type == 'release'
 
     # Fix Homebew LLVM build on Mac
     if build_machine.system() == 'darwin'
-      cpp_args += ['-I/usr/local/opt/llvm/include']
+      cpp_args  += ['-I/usr/local/opt/llvm/include']
       link_args += ['-L/usr/local/opt/llvm/lib']
       rpath = '/usr/local/opt/llvm/lib'
     endif
   endif
 elif build_type == 'debug' and meson.get_compiler('cpp').get_id() == 'gcc'
-  cpp_args += ['-g3']
+  cpp_args  += ['-g3']
   link_args += ['-g3']
 endif
 

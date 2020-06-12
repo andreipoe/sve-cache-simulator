@@ -41,22 +41,22 @@ CXX_GNU = g++
 CXX_INTEL = icpc
 CXX = $(CXX_$(COMPILER))
 
-CXXFLAGS_ARM = -$(ARCHFLAG)=$(ARCH) -Ofast -ffp-contract=fast -fsimdmath
-CXXFLAGS_CLANG = -$(ARCHFLAG)=$(ARCH) -Ofast -ffp-contract=fast
-CXXFLAGS_CRAY =
-CXXFLAGS_GNU = -$(ARCHFLAG)=$(ARCH) -Ofast
-CXXFLAGS_INTEL = -Ofast -x$(ARCH)
+CXXFLAGS_ARM = -$(ARCHFLAG)=$(ARCH) -Ofast -ffp-contract=fast -fsimdmath -fopenmp
+CXXFLAGS_CLANG = -$(ARCHFLAG)=$(ARCH) -Ofast -ffp-contract=fast -fopenmp
+CXXFLAGS_CRAY = -fopenmp
+CXXFLAGS_GNU = -$(ARCHFLAG)=$(ARCH) -Ofast -fopenmp
+CXXFLAGS_INTEL = -Ofast -x$(ARCH) -qopenmp
 
 CXXFLAGS = -Wall -Wextra -Wpedantic $(CXXFLAGS_$(COMPILER))
 ifeq ($(DEBUG), 1)
 CXXFLAGS += -g -O0
 endif
 
-LDFLAGS_ARM = -flto
-LDFLAGS_CLANG = -flto
-LDFLAGS_CRAY = -flto
-LDFLAGS_GNU = -flto
-LDFLAGS_INTEL = -ipo
+LDFLAGS_ARM = -flto -fopenmp
+LDFLAGS_CLANG = -flto -fopenmp
+LDFLAGS_CRAY = -flto -fopenmp
+LDFLAGS_GNU = -flto -fopenmp
+LDFLAGS_INTEL = -ipo -qopenmp
 
 ifeq ($(OS),Darwin)
 LDFLAGS_CLANG += -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib -mlinker-version=305

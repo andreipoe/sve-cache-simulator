@@ -1,1 +1,2 @@
 option('arch', type: 'string', value: 'native', description: 'The target architecture')
+option('parallel', type: 'boolean', value: true, description: 'Enable running simulations in parallel')

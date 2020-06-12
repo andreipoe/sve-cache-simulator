@@ -26,6 +26,7 @@ namespace {
 #define EXIT_INVALID_TRACE     4
 #define EXIT_UNKOWN_ENCODING   5
 #define EXIT_OLD_CONFIG        6
+#define EXIT_CONFIG_NOT_FOUND  6
 
 #define OPT_ENCODING_TEXT   1
 #define OPT_ENCODING_BINARY 2
@@ -68,23 +69,32 @@ void usage(int code) {
 }  // namespace
 
 TraceFileType guess_file_type(const std::string& fname);
-std::string_view config_name_from_fname(std::string_view fname);
-void print_text_results(const CacheHierarchy& cache, const MemoryTrace& trace, std::string_view config_fname);
+std::string config_name_from_fname(std::string_view fname);
+void print_text_results(const CacheHierarchy& cache, const MemoryTrace& trace,
+                        std::string_view config_fname);
 std::string make_csv_header(int max_levels);
 std::string make_csv_results(const CacheHierarchy& cache, std::string_view config_name);
 
 using timestamp = std::chrono::time_point<std::chrono::high_resolution_clock>;
-struct SimulationTime {
-  std::string_view sim_name;
-  timestamp sim_start, sim_end;
+struct SimulationStats {
+  std::string sim_name;
+  std::shared_ptr<CacheHierarchy> cache;
 
-  explicit SimulationTime(std::string_view sim_name, const timestamp sim_start,
-                          const timestamp sim_end)
-      : sim_name(sim_name), sim_start(sim_start), sim_end(sim_end) { }
+  timestamp sim_start, sim_end;
+  std::string csv_results;
+
+  SimulationStats(const std::string& sim_name,
+                  const std::shared_ptr<CacheHierarchy> cache)
+      : sim_name(sim_name), cache(cache) { }
+
+  explicit SimulationStats(std::string sim_name,
+                           const std::shared_ptr<CacheHierarchy> cache,
+                           const timestamp sim_start, const timestamp sim_end)
+      : sim_name(sim_name), cache(cache), sim_start(sim_start), sim_end(sim_end) { }
 };
 
 void print_timings(timestamp start, timestamp parse_end,
-                   const std::vector<SimulationTime> simulations);
+                   const std::vector<SimulationStats> simulations, timestamp finish);
 
 
 int main(int argc, char* argv[]) {
@@ -214,57 +224,54 @@ int main(int argc, char* argv[]) {
     std::cout << "Seen " << unique_addresses.size() << " unique addresses.\n";
   }
 
-  // TODO: When running a batch, each config can be run in a separate thread
-  std::vector<std::string_view> configs_not_found;
+  // Prepare a SmulationStats object to be populated as configurations are executed
   int max_levels = 0;
-  std::vector<std::string> csv_results;
-  csv_results.reserve(config_fnames.size());
-  std::vector<SimulationTime> simulation_times;
-  auto t_previous = std::chrono::high_resolution_clock::now();
-
+  std::vector<std::shared_ptr<CacheHierarchy>> caches;
+  std::vector<SimulationStats> simulation_stats;
+  caches.reserve(config_fnames.size());
+  simulation_stats.reserve(config_fnames.size());
   for (const auto& config_fname : config_fnames) {
-    if (output_format[BIT_OUTPUT_TEXT]) std::cout << SEPARATOR "\n";
-
     std::ifstream config_file { config_fname };
     if (!config_file.is_open()) {
       std::cout << "Cannot open config file: " << config_fname << "\n";
-      configs_not_found.push_back(config_fname);
-      continue;
+      std::exit(EXIT_CONFIG_NOT_FOUND);
     }
 
-    CacheHierarchy cache { std::move(config_file) };
-    cache.touch(trace.getRequests());
+    auto cache = std::make_shared<CacheHierarchy>(std::move(config_file));
+    caches.push_back(cache);
+    simulation_stats.emplace_back(config_name_from_fname(config_fname), cache);
 
-    const auto t_sim_end   = std::chrono::high_resolution_clock::now();
-    const auto config_name = config_name_from_fname(config_fname);
-    simulation_times.emplace_back(config_name, t_previous, t_sim_end);
-    t_previous = t_sim_end;
-
-    // TODO: Output needs to be kept in order if running simulations in parallel
-    if (output_format[BIT_OUTPUT_TEXT]) {
-      print_text_results(cache, trace, config_name);
-    }
-    if (output_format[BIT_OUTPUT_CSV]) {
-      csv_results.push_back(make_csv_results(cache, config_name));
-      if (cache.nlevels() > max_levels) max_levels = cache.nlevels();
-    }
+    const int this_cache_levels = cache->nlevels();
+    if (this_cache_levels > max_levels) max_levels = this_cache_levels;
   }
+
+
+  // Main simulation loop
+#pragma omp parallel for
+  for (size_t i = 0; i < simulation_stats.size(); i++) {
+    auto& sim = simulation_stats[i];
+
+    sim.sim_start = std::chrono::high_resolution_clock::now();
+    sim.cache->touch(trace.getRequests());
+    sim.sim_end = std::chrono::high_resolution_clock::now();
+
+    if (output_format[BIT_OUTPUT_TEXT])
+      print_text_results(*sim.cache, trace, sim.sim_name);
+
+    if (output_format[BIT_OUTPUT_CSV])
+      sim.csv_results = make_csv_results(*sim.cache, sim.sim_name);
+  }
+
 
   if (output_format[BIT_OUTPUT_CSV]) {
     if (output_format[BIT_OUTPUT_TEXT]) std::cout << SEPARATOR "\n";
 
     std::cout << make_csv_header(max_levels) << "\n";
-    for (const auto& csv_entry : csv_results) std::cout << csv_entry << "\n";
+    for (const auto& sim : simulation_stats) std::cout << sim.csv_results << "\n";
   }
 
-  if (enable_timing) print_timings(t_start, t_parse_end, simulation_times);
-
-  if (configs_not_found.size() > 0) {
-    std::cerr << "Config files not found: ";
-    for (auto f : configs_not_found) std::cerr << f << " ";
-    std::cerr << "\n";
-    std::exit(EXIT_INVALID_CONFIG);
-  }
+  const auto t_finish = std::chrono::high_resolution_clock::now();
+  if (enable_timing) print_timings(t_start, t_parse_end, simulation_stats, t_finish);
 
   return 0;
 }
@@ -286,20 +293,22 @@ TraceFileType guess_file_type(const std::string& fname) {
 
 /* Makes a config name from a given file name by taking the basename and removing the
  * extension */
-std::string_view config_name_from_fname(std::string_view fname) {
+std::string config_name_from_fname(std::string_view fname) {
   const auto last_slash  = fname.rfind('/');
   const auto last_dot    = fname.rfind('.');
   const auto config_name = fname.substr(last_slash + 1, last_dot - last_slash - 1);
 
-  return config_name;
+  return std::string(config_name);
 }
 
 
-void print_text_results(const CacheHierarchy& cache, const MemoryTrace& trace, std::string_view config_fname) {
-  std::cout.imbue({ std::locale(), new CommaNumPunct() });
-  std::cout << "Config file: " << config_fname << "\n\n";
+void print_text_results(const CacheHierarchy& cache, const MemoryTrace& trace,
+                        std::string_view config_fname) {
+  std::ostringstream ss;
 
-  std::cout << "CPU to L1 traffic: " << cache.getTraffic(0) << " bytes\n";
+  ss << SEPARATOR "\n";
+  ss << "Config file: " << config_fname << "\n\n";
+  ss << "CPU to L1 traffic: " << cache.getTraffic(0) << " bytes\n";
 
   std::vector<std::string> level_names(cache.nlevels() + 2);
   for (int level = 1; level <= cache.nlevels() + 1; level++)
@@ -313,15 +322,15 @@ void print_text_results(const CacheHierarchy& cache, const MemoryTrace& trace, s
     const auto pct_hits   = (static_cast<double>(hits) / total) * 100.0;
     const auto pct_misses = 100.0 - pct_hits;
 
-    std::cout << "\n";
-    std::cout << level_names[level] << " Total accesses: " << total << "\n";
-    std::cout << level_names[level] << " Hits: " << hits << " (" << std::fixed
-              << std::setprecision(2) << pct_hits << "%)\n";
-    std::cout << level_names[level] << " Misses: " << misses << " (" << std::fixed
-              << std::setprecision(2) << pct_misses << "%)\n";
-    std::cout << level_names[level] << " Evictions: " << evictions << "\n";
-    std::cout << level_names[level] << " to " << level_names[level + 1]
-              << " traffic: " << cache.getTraffic(level) << " bytes\n";
+    ss << "\n";
+    ss << level_names[level] << " Total accesses: " << total << "\n";
+    ss << level_names[level] << " Hits: " << hits << " (" << std::fixed
+       << std::setprecision(2) << pct_hits << "%)\n";
+    ss << level_names[level] << " Misses: " << misses << " (" << std::fixed
+       << std::setprecision(2) << pct_misses << "%)\n";
+    ss << level_names[level] << " Evictions: " << evictions << "\n";
+    ss << level_names[level] << " to " << level_names[level + 1]
+       << " traffic: " << cache.getTraffic(level) << " bytes\n";
   }
 
   const auto bundles = cache.getBundleOps();
@@ -333,12 +342,14 @@ void print_text_results(const CacheHierarchy& cache, const MemoryTrace& trace, s
   const auto bundle_ratio =
       static_cast<double>(total_bundle_ops) / trace.getLength() * 100;
 
-  std::cout << "\n";
-  std::cout << "Total scatter/gather bundles simulated: " << total_bundles << "\n";
-  std::cout << "Total unique scatter/gather bundles encountered: " << bundles.size()
-            << "\n";
-  std::cout << "Total ops part of scatters/gathers: " << total_bundle_ops << " ("
-            << std::setprecision(2) << bundle_ratio << "%)\n";
+  ss << "\n";
+  ss << "Total scatter/gather bundles simulated: " << total_bundles << "\n";
+  ss << "Total unique scatter/gather bundles encountered: " << bundles.size() << "\n";
+  ss << "Total ops part of scatters/gathers: " << total_bundle_ops << " ("
+     << std::setprecision(2) << bundle_ratio << "%)\n";
+
+  std::cout.imbue({ std::locale(), new CommaNumPunct() });
+  std::cout << ss.str();
 }
 
 std::string make_csv_header(int max_levels) {
@@ -373,12 +384,12 @@ std::string make_csv_results(const CacheHierarchy& cache, std::string_view confi
 }
 
 void print_timings(timestamp start, timestamp parse_end,
-                   const std::vector<SimulationTime> simulation_times) {
+                   const std::vector<SimulationStats> simulation_stats,
+                   timestamp finish) {
   std::cout << SEPARATOR "\n" << std::setprecision(2);
 
-  const auto t_finish   = simulation_times[simulation_times.size() - 1].sim_end;
-  const auto total_time = std::chrono::duration<double>(t_finish - start).count();
-  std::cout << "Simulated " << simulation_times.size() << " configurations in "
+  const auto total_time = std::chrono::duration<double>(finish - start).count();
+  std::cout << "Simulated " << simulation_stats.size() << " configurations in "
             << total_time << " s\n";
 
   const auto parse_time     = std::chrono::duration<double>(parse_end - start).count();
@@ -386,7 +397,7 @@ void print_timings(timestamp start, timestamp parse_end,
   std::cout << "  Reading trace file took " << parse_time << " s (" << parse_time_pct
             << "%)\n";
 
-  for (const auto& sim : simulation_times) {
+  for (const auto& sim : simulation_stats) {
     const auto sim_time =
         std::chrono::duration<double>(sim.sim_end - sim.sim_start).count();
     const auto sim_time_pct = (sim_time / total_time) * 100;
