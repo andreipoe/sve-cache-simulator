@@ -58,6 +58,25 @@ env CXX=clang++ CXXFLAGS='-stdlib=libstdc++ -I/usr/local/opt/gcc/include/c++/9.3
 
 ## Run
 
+```
+./scs --help
+Usage:
+scs --binary [OPTIONS] -c CONFIG-FILE TRACE-FILE
+scs --text   [OPTIONS] -c CONFIG-FILE TRACE-FILE
+scs --help
+
+Options:
+-b, --batch BATCH-FILE        Treat all entries in BATCH-FILE as arguments to -c
+Paths are relative to the batch file. May be specified more than once.
+-c CONFIG-FILE                The cache configuration file. Required at least once.
+May be specified more than once for batch runs.
+-f, --format {text,csv,both}  Set the output format. Default: 'both' for single runs, 'csv' for batches.
+
+-t, --timings                 Report run times of the main stages.
+```
+
+Basic usage involves passing a path to a cache hierarchy configuration file and a trace file to simulate:
+
 ```bash
 ./scs -c config.ini trace.log
 ```
@@ -77,6 +96,24 @@ A tool is provided to convert from text to binary traces:
 ```
 
 Reading binary traces is [about 5x faster](https://gitlab.com/phd-repos/sve-cache-simulator/-/issues/8#note_358269256) than parsing numbers from text.
+
+The same trace can be run through several configurations with a single invocation:
+
+```bash
+./scs -c config1.ini -c config2.ini trace.bin # -c can be specified any number of times
+./scs -b configs.batch trace.bin              # batch files contain a path to a configuration file per line
+```
+
+The output format can be (more readable) text, CSV, or both:
+
+```bash
+./scs -c config.ini -f text trace.bin
+./scs -c config.ini -f csv trace.bin
+./scs -c config.ini -f both trace.bin
+```
+
+Plain text is the default when running a single configuration, whereas CSV is the default for batches.
+
 
 ### Tests
 

@@ -54,9 +54,8 @@ void usage(int code) {
   std::cout << "  scs --text   [OPTIONS] -c CONFIG-FILE TRACE-FILE\n";
   std::cout << "  scs --help\n\n";
   std::cout << "Options:\n";
-  // TODO: add a batch file parameter, which takes a list of config files
-  // std::cout << "  -b BATCH-FILE                 The cache configuration file. Required at least once.\n";
-  // std::cout << "                                May be specified more than once for batched runs.\n";
+  std::cout << "  -b, --batch BATCH-FILE        Treat all entries in BATCH-FILE as arguments to -c\n";
+  std::cout << "                                Paths are relative to the batch file. May be specified more than once.\n";
   std::cout << "  -c CONFIG-FILE                The cache configuration file. Required at least once.\n";
   std::cout << "                                May be specified more than once for batch runs.\n";
   std::cout << "  -f, --format {text,csv,both}  Set the output format. Default: 'both' for single runs, 'csv' for batches.\n\n";
@@ -75,8 +74,8 @@ void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache,
 
 using timestamp = std::chrono::time_point<std::chrono::high_resolution_clock>;
 struct SimulationTime {
-  const std::string_view sim_name;
-  const timestamp sim_start, sim_end;
+  std::string_view sim_name;
+  timestamp sim_start, sim_end;
 
   explicit SimulationTime(std::string_view sim_name, const timestamp sim_start,
                           const timestamp sim_end)
@@ -89,12 +88,13 @@ void print_timings(timestamp start, timestamp parse_end,
 
 int main(int argc, char* argv[]) {
   int opt;
-  std::vector<std::string> config_fnames;
+  std::vector<std::string> config_fnames, batch_names;
   bool encoding_provided { false }, enable_timing { false }, opt_f_used { false };
   TraceFileType trace_encoding {};
   OutputFormat output_format { (1 << OUTPUT_BIT_COUNT) - 1 };
 
   struct option long_options[] = { { "config", required_argument, NULL, 'c' },
+                                   { "batch", required_argument, NULL, 'b' },
                                    { "text", no_argument, NULL, OPT_ENCODING_TEXT },
                                    { "binary", no_argument, NULL, OPT_ENCODING_BINARY },
                                    { "format", required_argument, NULL, 'f' },
@@ -102,10 +102,13 @@ int main(int argc, char* argv[]) {
                                    { "help", no_argument, NULL, 'h' },
                                    { 0, 0, 0, 0 } };
 
-  while ((opt = getopt_long(argc, argv, "c:f:th", long_options, NULL)) != -1) {
+  while ((opt = getopt_long(argc, argv, "c:b:f:th", long_options, NULL)) != -1) {
     switch (opt) {
       case 'c':
         config_fnames.emplace_back(optarg);
+        break;
+      case 'b':
+        batch_names.emplace_back(optarg);
         break;
 
       case OPT_ENCODING_TEXT:
@@ -143,12 +146,30 @@ int main(int argc, char* argv[]) {
   argc -= optind;
   argv += optind;
 
+  for (const auto& batch : batch_names) {
+    std::ifstream f { batch };
+    std::string line;
+    while (std::getline(f, line)) {
+      if (line.empty()) continue;
+
+      // Accept absolute and relative paths
+      if (line[0] == '/')
+        config_fnames.push_back(line);
+      else {
+        // Relative paths are relative to the the batch file's location
+        const auto last_slash = batch.rfind('/');
+        if (last_slash == std::string::npos)
+          config_fnames.push_back(line);
+        else
+          config_fnames.push_back(batch.substr(0, last_slash) + '/' + line);
+      }
+    }
+  }
   if (config_fnames.empty() || argc < 1) usage(EXIT_INVALID_ARGUMENTS);
 
   // In batch mode, if text output hasn't been request specifically, use CSV output by
   // default
-  if (config_fnames.size() > 1 && !opt_f_used)
-    output_format.reset(BIT_OUTPUT_TEXT);
+  if (config_fnames.size() > 1 && !opt_f_used) output_format.reset(BIT_OUTPUT_TEXT);
 
   std::ostringstream info_output;
 
@@ -320,7 +341,8 @@ void run_and_print_stats(MemoryTrace const& trace, CacheHierarchy& cache,
               << std::setprecision(2) << bundle_ratio << "%)\n";
   }
 
-  // TODO: In batch mode, output the header only once, keeping in mind that it might differ per configuration
+  // TODO: In batch mode, output the header only once, keeping in mind that it might
+  // differ per configuration
   if (fmt[BIT_OUTPUT_CSV]) {
     if (fmt[BIT_OUTPUT_TEXT]) std::cout << SEPARATOR "\n";
     std::cout << csv_header.str() << "\n" << csv_data.str() << "\n";
