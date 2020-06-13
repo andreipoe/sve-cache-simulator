@@ -1,7 +1,9 @@
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <sstream>
 #include <string>
+#include <thread>
 
 #include "MemoryTrace.hh"
 
@@ -27,7 +29,7 @@ MemoryTrace::MemoryTrace(std::istream& tracefile, TraceFileType ftype) {
       construct_from_text_(tracefile);
       break;
     case TraceFileType::Binary:
-      construct_from_binary_(tracefile);
+      construct_from_binary_serial_(tracefile);
       break;
     default:
       throw std::invalid_argument("Unknown trace file type");
@@ -36,6 +38,19 @@ MemoryTrace::MemoryTrace(std::istream& tracefile, TraceFileType ftype) {
 
 MemoryTrace::MemoryTrace(std::istream&& tracefile, TraceFileType ftype)
     : MemoryTrace(tracefile, ftype) { }
+
+MemoryTrace::MemoryTrace(const std::string& trace_fname, TraceFileType ftype) {
+  switch (ftype) {
+    case TraceFileType::Text:
+      construct_from_text_(trace_fname);
+      break;
+    case TraceFileType::Binary:
+      construct_from_binary_parallel_(trace_fname);
+      break;
+    default:
+      throw std::invalid_argument("Unknown trace file type");
+  }
+}
 
 const std::vector<MemoryRequest> MemoryTrace::getRequests() const { return requests; }
 
@@ -78,7 +93,12 @@ void MemoryTrace::construct_from_text_(std::istream& tracefile) {
   }
 }
 
-void MemoryTrace::construct_from_binary_(std::istream& tracefile) {
+void MemoryTrace::construct_from_text_(const std::string& trace_fname) {
+  std::ifstream tracefile { trace_fname };
+  construct_from_text_(tracefile);
+}
+
+void MemoryTrace::construct_from_binary_serial_(std::istream& tracefile) {
   size_t elements;
   tracefile.read(reinterpret_cast<char*>(&elements), sizeof(size_t));
 
@@ -100,6 +120,60 @@ void MemoryTrace::construct_from_binary_(std::istream& tracefile) {
     requests.emplace_back(tid, size, bundle_kind, is_write, address, pc);
     requestAddresses.push_back(address);
   }
+}
+
+void MemoryTrace::construct_from_binary_parallel_(const std::string& trace_fname) {
+
+  std::ifstream tracefile { trace_fname, std::ios::binary };
+  size_t elements;
+  tracefile.read(reinterpret_cast<char*>(&elements), sizeof(size_t));
+  tracefile.close();
+
+  requests         = std::vector<MemoryRequest>(elements);
+  requestAddresses = std::vector<uint64_t>(elements);
+
+  const auto max_threads           = std::thread::hardware_concurrency();
+  const auto nthreads              = elements < max_threads ? elements : max_threads;
+  const size_t elements_per_thread = std::ceil(elements / static_cast<double>(nthreads));
+  const size_t bytes_per_thread =
+      elements_per_thread * (3 * sizeof(int) + sizeof(bool) + 2 * sizeof(uint64_t));
+
+  std::vector<std::thread> threads;
+  threads.reserve(nthreads);
+
+  for (size_t thread_num = 0; thread_num < nthreads; thread_num++) {
+    threads.emplace_back([&, thread_num]() {
+      std::ifstream tracefile { trace_fname, std::ios::binary };
+      const size_t file_offset = sizeof(size_t) + bytes_per_thread * thread_num;
+
+      tracefile.seekg(file_offset);
+
+      for (size_t i = 0;
+           i < elements_per_thread && i + elements_per_thread * thread_num < elements;
+           i++) {
+        const size_t global_element = elements_per_thread * thread_num + i;
+
+        uint64_t address;
+
+        tracefile.read(reinterpret_cast<char*>(&requests[global_element].tid),
+                       sizeof(int));
+        tracefile.read(reinterpret_cast<char*>(&requests[global_element].size),
+                       sizeof(int));
+        tracefile.read(reinterpret_cast<char*>(&requests[global_element].bundle_kind),
+                       sizeof(int));
+        tracefile.read(reinterpret_cast<char*>(&requests[global_element].is_write),
+                       sizeof(bool));
+        tracefile.read(reinterpret_cast<char*>(&address), sizeof(uint64_t));
+        tracefile.read(reinterpret_cast<char*>(&requests[global_element].pc),
+                       sizeof(uint64_t));
+
+        requests[global_element].address = address;
+        requestAddresses[global_element] = address;
+      }
+    });
+  }
+
+  for (auto& t : threads) t.join();
 }
 
 

@@ -2,18 +2,22 @@ project('sve-cache-simulator', 'cpp', version: '0.0.1',
   default_options: ['cpp_std=c++17', 'buildtype=release', 'b_lto=true', 'warning_level=3'])
 
 # ------- Build Options -------
+cxx = meson.get_compiler('cpp')
+
 cpp_args = []
 link_args = []
 rpath = ''
 
+m_dep = cxx.find_library('m', required: false)
+
+if get_option('parallel')
+  cpp_args  += ['-fopenmp']
+  link_args += ['-fopenmp']
+endif
+
 build_type = get_option('buildtype')
 if build_type == 'release'
   cpp_args += ['-ffast-math']
-
-  if get_option('parallel')
-    cpp_args  += ['-fopenmp']
-    link_args += ['-fopenmp']
-  endif
 
   arch = get_option('arch')
   if target_machine.cpu_family() == 'aarch64'
@@ -22,7 +26,7 @@ if build_type == 'release'
     cpp_args += ['-march=' + arch]
   endif
 
-  compiler = meson.get_compiler('cpp').get_id()
+  compiler = cxx.get_id()
   if compiler == 'armclang'
     cpp_args += ['-ffp-contract=fast', '-fsimdmath']
   elif compiler == 'clang'
@@ -35,7 +39,7 @@ if build_type == 'release'
       rpath = '/usr/local/opt/llvm/lib'
     endif
   endif
-elif build_type == 'debug' and meson.get_compiler('cpp').get_id() == 'gcc'
+elif build_type == 'debug' and cxx.get_id() == 'gcc'
   cpp_args  += ['-g3']
   link_args += ['-g3']
 endif
@@ -55,7 +59,8 @@ src_main = files('main.cc')
 main_exe = executable('scs', src_common, src_main,
     cpp_args: cpp_args,
     link_args: link_args,
-    build_rpath: rpath)
+    build_rpath: rpath,
+    dependencies: m_dep)
 
 
 # ------- Trace Converter -------
@@ -66,7 +71,8 @@ src_converter_main = files([
 converter_exe = executable('convert-trace', src_converter_common, src_converter_main,
     cpp_args: cpp_args,
     link_args: link_args,
-    build_rpath: rpath)
+    build_rpath: rpath,
+    dependencies: m_dep)
 
 
 # ------- Tests -------
@@ -84,10 +90,11 @@ src_test = files([
   'test/utils.cc'
 ])
 test_exe = executable('scs-test', src_test,
-                      objects: [main_exe.extract_objects(src_common), converter_exe.extract_objects(src_converter_common)],
-                      cpp_args: cpp_args,
-                      link_args: link_args,
-                      build_rpath: rpath)
+  objects: [main_exe.extract_objects(src_common), converter_exe.extract_objects(src_converter_common)],
+  cpp_args: cpp_args,
+  link_args: link_args,
+  build_rpath: rpath,
+  dependencies: m_dep)
 
 test('Cacth2 tests', test_exe)
 

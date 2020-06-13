@@ -184,6 +184,7 @@ int main(int argc, char* argv[]) {
 
   std::ostringstream info_output;
 
+  const std::string trace_fname { argv[0] };
   if (!encoding_provided) trace_encoding = guess_file_type(argv[0]);
 
   info_output << "Trace file encoding: ";
@@ -205,15 +206,9 @@ int main(int argc, char* argv[]) {
 
   if (output_format[BIT_OUTPUT_TEXT]) std::cout << info_output.str();
 
-  std::ifstream tracefile { argv[0] };
-  if (!tracefile.is_open()) {
-    std::cout << "Cannot open trace file: " << argv[0] << "\n";
-    std::exit(EXIT_INVALID_TRACE);
-  }
-
   const timestamp t_start = std::chrono::high_resolution_clock::now();
 
-  MemoryTrace trace { tracefile, trace_encoding };
+  MemoryTrace trace { trace_fname, trace_encoding };
 
   const timestamp t_parse_end = std::chrono::high_resolution_clock::now();
 
@@ -280,8 +275,13 @@ int main(int argc, char* argv[]) {
 /* Guess if the given file is a text file */
 TraceFileType guess_file_type(const std::string& fname) {
   std::ifstream f { fname };
-  const size_t check_count { 500 };
 
+  if (!f.is_open()) {
+    std::cout << "Cannot open trace file: " << fname << "\n";
+    std::exit(EXIT_INVALID_TRACE);
+  }
+
+  const size_t check_count { 500 };
   std::unique_ptr<char> data { new char[check_count + 1] };
   f.read(data.get(), check_count);
 

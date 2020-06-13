@@ -8,6 +8,7 @@ struct MemoryRequest {
   bool is_write;
   uint64_t address, pc;
 
+  MemoryRequest() = default;
   explicit MemoryRequest(const int tid, const int size, const int bundle_value,
                          const bool is_write, const uint64_t address, const uint64_t pc);
 
@@ -34,13 +35,21 @@ class MemoryTrace {
   std::vector<uint64_t> requestAddresses;
 
   inline void construct_from_text_(std::istream& tracefile);
-  inline void construct_from_binary_(std::istream& tracefile);
+  inline void construct_from_text_(const std::string& trace_fname);
+  inline void construct_from_binary_serial_(std::istream& tracefile);
+  inline void construct_from_binary_parallel_(const std::string& trace_fname);
 
  public:
-  /* Construct a MemoryTrace object from a trace file */
+  /* Construct a MemoryTrace object from a trace file.
+     Binary traces are read sequentially */
   explicit MemoryTrace(std::istream& tracefile,
                        TraceFileType ftype = TraceFileType::Text);
   explicit MemoryTrace(std::istream&& tracefile,
+                       TraceFileType ftype = TraceFileType::Text);
+
+  /* Construct a MemoryTrace object from a trace file name
+     Binary traces are read in parallel */
+  explicit MemoryTrace(const std::string& trace_fname,
                        TraceFileType ftype = TraceFileType::Text);
 
   const std::vector<MemoryRequest> getRequests() const;

@@ -73,6 +73,12 @@ TEST_CASE("Writing and parsing binary trace files works", "[trace]") {
   const std::string fname { "testout.bin" };
   trace.write_binary(fname);
 
-  const MemoryTrace binary_trace { std::ifstream { fname }, TraceFileType::Binary };
-  REQUIRE(trace_equals(trace, binary_trace));
+  SECTION("Sequential trace reads") {
+    const MemoryTrace binary_trace { std::ifstream { fname }, TraceFileType::Binary };
+    REQUIRE(trace_equals(trace, binary_trace));
+  }
+  SECTION("Parallel trace reads") {
+    const MemoryTrace binary_trace { fname, TraceFileType::Binary };
+    REQUIRE(trace_equals(trace, binary_trace));
+  }
 }
