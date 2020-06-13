@@ -8,10 +8,11 @@ SetAssociativeCache::SetAssociativeCache(const CacheConfig config)
 }
 
 CacheEvents SetAssociativeCache::touch(const CacheAddress& address) {
-  uint64_t max_age { 0 };
-  CacheEntry *hit { nullptr }, *oldest { nullptr };
+  CacheEntry *hit { nullptr };
   CacheEvents events {};
 
+  CacheEntry *oldest = &cache_sets[address.index][0];
+  uint64_t max_age = oldest->age;
   for (CacheEntry& cache_line : cache_sets[address.index]) {
     cache_line.age += 1;
     if (cache_line.tag == address.tag && cache_line.valid) hit = &cache_line;

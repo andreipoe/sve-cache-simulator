@@ -1,5 +1,7 @@
 #include "cache.hh"
 
+#include <cassert>
+
 #include "DirectMappedCache.hh"
 #include "InfiniteCache.hh"
 #include "SetAssociativeCache.hh"
@@ -27,6 +29,8 @@ CacheAddress::CacheAddress(uint64_t address, uint64_t cache_size, int line_size,
   const unsigned int block_bits { nbits(line_size) };
   const unsigned int index_bits { nbits(cache_size) - nbits(line_size) -
                                   nbits(set_size) };
+
+  assert(index_bits < 62 && "Address index exceed 64-bit address space");
 
   block = address & ((1 << block_bits) - 1);
   index = (address >> block_bits) & ((1 << index_bits) - 1);
