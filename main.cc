@@ -59,6 +59,8 @@ void usage(int code) {
   std::cout << "                                Paths are relative to the batch file. May be specified more than once.\n";
   std::cout << "  -c CONFIG-FILE                The cache configuration file. Required at least once.\n";
   std::cout << "                                May be specified more than once for batch runs.\n";
+  std::cout << "  -p, --io-threads N            Set the number of threads used for reading binary trace files.\n";
+  std::cout << "                                Capped at `ncpus`. Default: min(" << DEFAULT_IO_THREADS << ", `ncpus`).\n";
   std::cout << "  -f, --format {text,csv,both}  Set the output format. Default: 'both' for single runs, 'csv' for batches.\n\n";
   std::cout << "  -t, --timings                 Report run times of the main stages.\n";
   // clang-format on
@@ -98,24 +100,26 @@ void print_timings(timestamp start, timestamp parse_end,
 
 
 int main(int argc, char* argv[]) {
-  int opt;
+  int opt, int_optarg;
   std::vector<std::string> config_fnames, batch_names;
   bool encoding_provided { false }, enable_timing { false }, opt_f_used { false };
+  int io_threads { DEFAULT_IO_THREADS };
   TraceFileType trace_encoding {};
   OutputFormat output_format { (1 << OUTPUT_BIT_COUNT) - 1 };
 
-  // TODO: Add a flag for number of threads
   struct option long_options[] = { { "config", required_argument, NULL, 'c' },
                                    { "batch", required_argument, NULL, 'b' },
                                    { "text", no_argument, NULL, OPT_ENCODING_TEXT },
                                    { "binary", no_argument, NULL, OPT_ENCODING_BINARY },
+                                   { "io-threads", required_argument, NULL, 'p' },
                                    { "format", required_argument, NULL, 'f' },
                                    { "timings", no_argument, NULL, 't' },
                                    { "help", no_argument, NULL, 'h' },
                                    { 0, 0, 0, 0 } };
 
-  while ((opt = getopt_long(argc, argv, "c:b:f:th", long_options, NULL)) != -1) {
+  while ((opt = getopt_long(argc, argv, "c:b:p:f:th", long_options, NULL)) != -1) {
     switch (opt) {
+      // Config options
       case 'c':
         config_fnames.emplace_back(optarg);
         break;
@@ -123,6 +127,7 @@ int main(int argc, char* argv[]) {
         batch_names.emplace_back(optarg);
         break;
 
+      // Encoding options
       case OPT_ENCODING_TEXT:
         if (encoding_provided) usage(EXIT_INVALID_ARGUMENTS);
         encoding_provided = true;
@@ -134,6 +139,14 @@ int main(int argc, char* argv[]) {
         trace_encoding    = TraceFileType::Binary;
         break;
 
+      // Tunables
+      case 'p':
+        int_optarg = std::stoi(optarg);
+        if (int_optarg < 1) usage(EXIT_INVALID_ARGUMENTS);
+        io_threads = int_optarg;
+        break;
+
+      // Output options
       case 'f':
         opt_f_used = true;
         if (!strcmp(optarg, "text"))
@@ -209,7 +222,7 @@ int main(int argc, char* argv[]) {
 
   const timestamp t_start = std::chrono::high_resolution_clock::now();
 
-  MemoryTrace trace { trace_fname, trace_encoding };
+  MemoryTrace trace { trace_fname, trace_encoding, io_threads };
 
   const timestamp t_parse_end = std::chrono::high_resolution_clock::now();
 

@@ -3,6 +3,8 @@
 #include <fstream>
 #include <vector>
 
+#define DEFAULT_IO_THREADS 12
+
 struct MemoryRequest {
   int tid, size, bundle_kind;
   bool is_write;
@@ -37,7 +39,7 @@ class MemoryTrace {
   inline void construct_from_text_(std::istream& tracefile);
   inline void construct_from_text_(const std::string& trace_fname);
   inline void construct_from_binary_serial_(std::istream& tracefile);
-  inline void construct_from_binary_parallel_(const std::string& trace_fname);
+  inline void construct_from_binary_parallel_(const std::string& trace_fname, int io_threads);
 
  public:
   /* Construct a MemoryTrace object from a trace file.
@@ -50,7 +52,8 @@ class MemoryTrace {
   /* Construct a MemoryTrace object from a trace file name
      Binary traces are read in parallel */
   explicit MemoryTrace(const std::string& trace_fname,
-                       TraceFileType ftype = TraceFileType::Text);
+                       TraceFileType ftype = TraceFileType::Text,
+                       int io_threads = DEFAULT_IO_THREADS);
 
   const std::vector<MemoryRequest> getRequests() const;
   const std::vector<uint64_t> getRequestAddresses() const;

@@ -39,13 +39,14 @@ MemoryTrace::MemoryTrace(std::istream& tracefile, TraceFileType ftype) {
 MemoryTrace::MemoryTrace(std::istream&& tracefile, TraceFileType ftype)
     : MemoryTrace(tracefile, ftype) { }
 
-MemoryTrace::MemoryTrace(const std::string& trace_fname, TraceFileType ftype) {
+MemoryTrace::MemoryTrace(const std::string& trace_fname, TraceFileType ftype,
+                         int io_threads) {
   switch (ftype) {
     case TraceFileType::Text:
       construct_from_text_(trace_fname);
       break;
     case TraceFileType::Binary:
-      construct_from_binary_parallel_(trace_fname);
+      construct_from_binary_parallel_(trace_fname, io_threads);
       break;
     default:
       throw std::invalid_argument("Unknown trace file type");
@@ -122,7 +123,8 @@ void MemoryTrace::construct_from_binary_serial_(std::istream& tracefile) {
   }
 }
 
-void MemoryTrace::construct_from_binary_parallel_(const std::string& trace_fname) {
+void MemoryTrace::construct_from_binary_parallel_(const std::string& trace_fname,
+                                                  int io_threads) {
 
   std::ifstream tracefile { trace_fname, std::ios::binary };
   size_t elements;
@@ -132,8 +134,9 @@ void MemoryTrace::construct_from_binary_parallel_(const std::string& trace_fname
   requests         = std::vector<MemoryRequest>(elements);
   requestAddresses = std::vector<uint64_t>(elements);
 
-  const auto max_threads           = std::thread::hardware_concurrency();
-  const auto nthreads              = elements < max_threads ? elements : max_threads;
+  const size_t max_threads =
+      std::min(static_cast<unsigned>(io_threads), std::thread::hardware_concurrency());
+  const auto nthreads              = std::min(elements, max_threads);
   const size_t elements_per_thread = std::ceil(elements / static_cast<double>(nthreads));
   const size_t bytes_per_thread =
       elements_per_thread * (3 * sizeof(int) + sizeof(bool) + 2 * sizeof(uint64_t));
