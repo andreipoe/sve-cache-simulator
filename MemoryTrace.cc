@@ -183,7 +183,7 @@ size_t MemoryTrace::getLength() const {
 }
 
 
-void MemoryTrace::write_binary(const std::string fname) const {
+void MemoryTrace::write_binary(const std::string& fname) const {
   std::ofstream f { fname };
 
   const size_t length = getLength();

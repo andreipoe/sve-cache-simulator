@@ -27,7 +27,7 @@ class CacheHierarchy {
   // TODO: support inclusive and exclusive caches
 
  public:
-  CacheHierarchy(const std::vector<CacheConfig> cache_configs);
+  CacheHierarchy(const std::vector<CacheConfig>& cache_configs);
   CacheHierarchy(std::istream&& config_file);
 
   /* Parameters */
@@ -66,11 +66,11 @@ class CacheHierarchy {
 
   /* Run a sequence of addresses through the cache hierarchy,
    * assuming the access doesn't cross cache-line boundaries */
-  void touch(const std::vector<uint64_t> addresses);
+  void touch(const std::vector<uint64_t>& addresses);
 
   /* Run a sequence of access through the cache hierarchy */
-  void touch(const std::vector<SizedAccess> accesses);
+  void touch(const std::vector<SizedAccess>& accesses);
 
   /* Run a sequence of requests through the cache hierarchy */
-  void touch(const std::vector<MemoryRequest> requests);
+  void touch(const std::vector<MemoryRequest>& requests);
 };

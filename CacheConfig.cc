@@ -6,7 +6,7 @@
 
 CacheConfig::CacheConfig(const CacheType type, const uint64_t size, const int line_size,
                          const int set_size)
-    : type(type), size(size), line_size(line_size), set_size(set_size) {}
+    : type(type), size(size), line_size(line_size), set_size(set_size) { }
 
 CacheConfig::CacheConfig(std::istream&& config_file) {
   inipp::Ini<char> ini;
@@ -44,21 +44,21 @@ CacheConfig::CacheConfig(std::istream&& config_file) {
   read_config_map_(config_section);
 }
 
-CacheConfig::CacheConfig(ConfigMap config_map) { read_config_map_(config_map); }
+CacheConfig::CacheConfig(const ConfigMap& config_map) { read_config_map_(config_map); }
 
 
-void CacheConfig::read_config_map_(ConfigMap config_map) {
+void CacheConfig::read_config_map_(const ConfigMap& config_map) {
   try {
-    size      = std::stoi(config_map["cache_size"]);
-    line_size = std::stoi(config_map["line_size"]);
+    size      = std::stoi(config_map.at("cache_size"));
+    line_size = std::stoi(config_map.at("line_size"));
     set_size  = config_map.find("set_size") != std::end(config_map)
-                   ? std::stoi(config_map["set_size"])
+                   ? std::stoi(config_map.at("set_size"))
                    : 1;
   } catch (const std::out_of_range& e) {
     throw std::invalid_argument(std::string("Malformed config file: ") + e.what());
   }
 
-  auto typestr = config_map["type"];
+  auto typestr = config_map.at("type");
   typestr.erase(std::remove_if(typestr.begin(), typestr.end(), [](unsigned char c) {
     return std::isspace(c) || std::ispunct(c);
   }));

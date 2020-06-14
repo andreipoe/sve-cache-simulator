@@ -91,7 +91,7 @@ class Cache {
   uint64_t hits { 0 }, misses { 0 }, evictions { 0 };
 
   explicit Cache(const uint64_t size, const int line_size, const int set_size = 1);
-  Cache(const CacheConfig config);
+  Cache(const CacheConfig& config);
 
  public:
   virtual ~Cache();
@@ -104,24 +104,24 @@ class Cache {
   virtual CacheEvents touch(const uint64_t address, const int size = 1) final;
 
   /* Run a single request through the cache */
-  virtual CacheEvents touch(const SizedAccess access) final;
+  virtual CacheEvents touch(const SizedAccess& access) final;
 
   /* Run a single request through the cache */
-  virtual CacheEvents touch(MemoryRequest request) final;
+  virtual CacheEvents touch(const MemoryRequest& request) final;
 
   /* Run a sequence of addresses through the cache,
    * assuming the access doesn't cross cache-line boundaries */
-  virtual CacheEvents touch(const std::vector<uint64_t> addresses) final;
+  virtual CacheEvents touch(const std::vector<uint64_t>& addresses) final;
 
   /* Run a sequence of addresses that don't cross cache-line boundaries through the cache
    */
-  virtual CacheEvents touch(const std::vector<CacheAddress> addresses) final;
+  virtual CacheEvents touch(const std::vector<CacheAddress>& addresses) final;
 
   /* Run a sequence of accesses through the cache */
-  virtual CacheEvents touch(const std::vector<SizedAccess> accesses) final;
+  virtual CacheEvents touch(const std::vector<SizedAccess>& accesses) final;
 
   /* Run a sequence of requests through the cache */
-  virtual CacheEvents touch(const std::vector<MemoryRequest> requests) final;
+  virtual CacheEvents touch(const std::vector<MemoryRequest>& requests) final;
 
   virtual uint64_t getSize() const final;
   virtual int getLineSize() const final;
@@ -134,7 +134,7 @@ class Cache {
   uint64_t getEvictions() const;
 
   /* Factory method for creating caches based on the given configuration */
-  static std::unique_ptr<Cache> make_cache(const CacheConfig config);
+  static std::unique_ptr<Cache> make_cache(const CacheConfig& config);
 
   /* Split a raw address into a tag, a set, a line, and a block, as mapped by this cache
    */

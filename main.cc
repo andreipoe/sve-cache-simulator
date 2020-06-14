@@ -87,14 +87,14 @@ struct SimulationStats {
                   const std::shared_ptr<CacheHierarchy> cache)
       : sim_name(sim_name), cache(cache) { }
 
-  explicit SimulationStats(std::string sim_name,
+  explicit SimulationStats(const std::string& sim_name,
                            const std::shared_ptr<CacheHierarchy> cache,
                            const timestamp sim_start, const timestamp sim_end)
       : sim_name(sim_name), cache(cache), sim_start(sim_start), sim_end(sim_end) { }
 };
 
 void print_timings(timestamp start, timestamp parse_end,
-                   const std::vector<SimulationStats> simulations, timestamp finish);
+                   const std::vector<SimulationStats>& simulations, timestamp finish);
 
 
 int main(int argc, char* argv[]) {
@@ -104,6 +104,7 @@ int main(int argc, char* argv[]) {
   TraceFileType trace_encoding {};
   OutputFormat output_format { (1 << OUTPUT_BIT_COUNT) - 1 };
 
+  // TODO: Add a flag for number of threads
   struct option long_options[] = { { "config", required_argument, NULL, 'c' },
                                    { "batch", required_argument, NULL, 'b' },
                                    { "text", no_argument, NULL, OPT_ENCODING_TEXT },
@@ -384,7 +385,7 @@ std::string make_csv_results(const CacheHierarchy& cache, std::string_view confi
 }
 
 void print_timings(timestamp start, timestamp parse_end,
-                   const std::vector<SimulationStats> simulation_stats,
+                   const std::vector<SimulationStats>& simulation_stats,
                    timestamp finish) {
   std::cout << SEPARATOR "\n" << std::setprecision(2);
 

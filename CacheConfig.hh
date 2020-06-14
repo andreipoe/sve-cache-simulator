@@ -28,8 +28,8 @@ struct CacheConfig {
 
   /* Construct a `CacheConfig` from a parameter mapping, as it would appear in a config
    * file */
-  CacheConfig(ConfigMap config_map);
+  CacheConfig(const ConfigMap& config_map);
 
  private:
-  void read_config_map_(ConfigMap config_map);
+  void read_config_map_(const ConfigMap& config_map);
 };

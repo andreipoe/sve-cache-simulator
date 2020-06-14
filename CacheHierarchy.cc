@@ -7,7 +7,7 @@
 
 #define KEY_NLEVELS "levels"
 
-CacheHierarchy::CacheHierarchy(const std::vector<CacheConfig> cache_configs)
+CacheHierarchy::CacheHierarchy(const std::vector<CacheConfig>& cache_configs)
     : traffic(cache_configs.size() + 1, 0) {
   levels.reserve(cache_configs.size());
   for (const auto& config : cache_configs) levels.push_back(Cache::make_cache(config));
@@ -133,14 +133,14 @@ void CacheHierarchy::touch(MemoryRequest request) {
   touch(request.address, request.size);
 }
 
-void CacheHierarchy::touch(const std::vector<uint64_t> addresses) {
+void CacheHierarchy::touch(const std::vector<uint64_t>& addresses) {
   for (auto const& a : addresses) touch(a);
 }
 
-void CacheHierarchy::touch(const std::vector<SizedAccess> accesses) {
+void CacheHierarchy::touch(const std::vector<SizedAccess>& accesses) {
   for (auto const& a : accesses) touch(a);
 }
 
-void CacheHierarchy::touch(const std::vector<MemoryRequest> requests) {
+void CacheHierarchy::touch(const std::vector<MemoryRequest>& requests) {
   for (auto const& r : requests) touch(r);
 }

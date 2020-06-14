@@ -57,5 +57,5 @@ class MemoryTrace {
   size_t getLength() const;
 
   /* Save this trace to a binary file */
-  void write_binary(const std::string fname) const;
+  void write_binary(const std::string& fname) const;
 };

@@ -38,14 +38,14 @@ CacheAddress::CacheAddress(uint64_t address, uint64_t cache_size, int line_size,
 }
 
 CacheAddress::CacheAddress(uint64_t address, const CacheConfig& config)
-    : CacheAddress(address, config.size, config.line_size, config.set_size) {}
+    : CacheAddress(address, config.size, config.line_size, config.set_size) { }
 
 CacheAddress::CacheAddress(uint64_t address, const Cache& cache)
-    : CacheAddress(address, cache.getSize(), cache.getLineSize(), cache.getSetSize()) {}
+    : CacheAddress(address, cache.getSize(), cache.getLineSize(), cache.getSetSize()) { }
 
 // ------
 
-CacheEntry::CacheEntry(uint64_t tag) : tag(tag), valid(true) {}
+CacheEntry::CacheEntry(uint64_t tag) : tag(tag), valid(true) { }
 
 // ------
 
@@ -59,10 +59,10 @@ Cache::Cache(const uint64_t size, const int line_size, const int set_size)
     throw std::invalid_argument("Cache size is not a power of 2");
 }
 
-Cache::Cache(const CacheConfig config)
-    : Cache(config.size, config.line_size, config.set_size) {}
+Cache::Cache(const CacheConfig& config)
+    : Cache(config.size, config.line_size, config.set_size) { }
 
-Cache::~Cache() {}
+Cache::~Cache() { }
 
 const CacheAddress Cache::split_address(const uint64_t address) const {
   return CacheAddress(address, *this);
@@ -87,33 +87,33 @@ CacheEvents Cache::touch(const uint64_t address, const int size) {
   return events;
 }
 
-CacheEvents Cache::touch(const SizedAccess access) {
+CacheEvents Cache::touch(const SizedAccess& access) {
   return touch(access.address, access.size);
 }
 
-CacheEvents Cache::touch(MemoryRequest request) {
+CacheEvents Cache::touch(const MemoryRequest& request) {
   return touch(request.address, request.size);
 }
 
-CacheEvents Cache::touch(const std::vector<uint64_t> addresses) {
+CacheEvents Cache::touch(const std::vector<uint64_t>& addresses) {
   CacheEvents events {};
   for (auto const& a : addresses) events += touch(a);
   return events;
 }
 
-CacheEvents Cache::touch(const std::vector<CacheAddress> addresses) {
+CacheEvents Cache::touch(const std::vector<CacheAddress>& addresses) {
   CacheEvents events {};
   for (auto const& a : addresses) events += touch(a);
   return events;
 }
 
-CacheEvents Cache::touch(const std::vector<SizedAccess> accesses) {
+CacheEvents Cache::touch(const std::vector<SizedAccess>& accesses) {
   CacheEvents events {};
   for (auto const& a : accesses) events += touch(a);
   return events;
 }
 
-CacheEvents Cache::touch(const std::vector<MemoryRequest> requests) {
+CacheEvents Cache::touch(const std::vector<MemoryRequest>& requests) {
   CacheEvents events {};
   for (auto const& r : requests) events += touch(r);
   return events;
@@ -128,7 +128,7 @@ uint64_t Cache::getMisses() const { return misses; }
 uint64_t Cache::getTotalAccesses() const { return hits + misses; }
 uint64_t Cache::getEvictions() const { return evictions; }
 
-std::unique_ptr<Cache> Cache::make_cache(const CacheConfig config) {
+std::unique_ptr<Cache> Cache::make_cache(const CacheConfig& config) {
   switch (config.type) {
     case CacheType::Infinite:
       return std::make_unique<InfiniteCache>();
@@ -142,4 +142,4 @@ std::unique_ptr<Cache> Cache::make_cache(const CacheConfig config) {
 }
 
 NotImplementedException::NotImplementedException()
-    : std::logic_error("Not implemented") {}
+    : std::logic_error("Not implemented") { }
