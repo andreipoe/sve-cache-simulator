@@ -10,7 +10,7 @@ class SetAssociativeCache : public Cache {
   std::vector<CacheSet> cache_sets;
 
  public:
-  SetAssociativeCache(const CacheConfig config);
+  SetAssociativeCache(const CacheConfig config, const std::shared_ptr<const Clock> clock);
 
   using Cache::touch;
   virtual CacheEvents touch(const CacheAddress& address) override;

@@ -47,6 +47,7 @@ endif
 
 # ------- Main Binary -------
 src_common = files([
+  'Clock.cc',
   'cache.cc',
   'CacheConfig.cc',
   'CacheHierarchy.cc',

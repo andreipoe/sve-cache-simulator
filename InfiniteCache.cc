@@ -1,6 +1,6 @@
 #include "InfiniteCache.hh"
 
-InfiniteCache::InfiniteCache() : Cache(static_cast<uint64_t>(1) << 48, 64) {}
+InfiniteCache::InfiniteCache(const std::shared_ptr<const Clock> clock) : Cache(static_cast<uint64_t>(1) << 48, 64, 1, clock) {}
 
 CacheEvents InfiniteCache::touch(const CacheAddress& cache_address) {
   auto cached_element = addresses.find(cache_address.index);

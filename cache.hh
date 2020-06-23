@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "CacheConfig.hh"
+#include "Clock.hh"
 #include "MemoryTrace.hh"
 
 struct CacheEvents {
@@ -54,16 +55,27 @@ struct CacheAddress {
 /* A cache row entry (without the value, because it's never needed) */
 struct CacheEntry {
   uint64_t tag;
+
+  /* Shows where this entry has ever been touched */
   bool valid { false };
+
+  /* How long this entry has been in the cache for. Incremented on every touch to this
+   * entry's set */
   uint64_t age { 0 };
 
-  CacheEntry()                     = default;
-  CacheEntry(const CacheEntry& mE) = default;
-  CacheEntry(CacheEntry&& mE)      = default;
-  CacheEntry& operator=(const CacheEntry& mE) = default;
-  CacheEntry& operator=(CacheEntry&& mE) = default;
+  /* The cycle on which this entry was loaded into the cache. Only makes sense if the
+   * entry is valid. */
+  uint64_t loaded_at;
 
-  CacheEntry(uint64_t tag);
+  CacheEntry()                     = default;
+  CacheEntry(const CacheEntry& ce) = default;
+  CacheEntry(CacheEntry&& ce)      = default;
+  CacheEntry& operator=(const CacheEntry& ce) = default;
+  CacheEntry& operator=(CacheEntry&& ce) = default;
+
+  /* Marks that data has been loaded into this cache entry, making it valid and recording
+   * the load timestamp */
+  void set(uint64_t tag, uint64_t timestamp);
 };
 
 class NotImplementedException : public std::logic_error {
@@ -76,6 +88,8 @@ class ConfigException : public std::logic_error {
  public:
   ConfigException();
 };
+
+// ------
 
 class Cache {
  protected:
@@ -90,8 +104,21 @@ class Cache {
 
   uint64_t hits { 0 }, misses { 0 }, evictions { 0 };
 
-  explicit Cache(const uint64_t size, const int line_size, const int set_size = 1);
-  Cache(const CacheConfig& config);
+  /* The hierarchy's clock, shared between all the levels */
+  const std::shared_ptr<const Clock> clock_;
+
+  /* A histogram of how long cache lines last in this cache before being evicted */
+  std::map<uint64_t, uint64_t> lifetimes;
+
+
+  explicit Cache(const uint64_t size, const int line_size, const int set_size,
+                 const std::shared_ptr<const Clock> clock);
+  Cache(const CacheConfig& config, const std::shared_ptr<const Clock> clock);
+
+
+  /* Add an entry to the lifetimes histogram for a line loaded on the given cycle and
+   * evicted on this cycle */
+  void log_eviction(uint64_t loaded_at);
 
  public:
   virtual ~Cache();
@@ -123,6 +150,7 @@ class Cache {
   /* Run a sequence of requests through the cache */
   virtual CacheEvents touch(const std::vector<MemoryRequest>& requests) final;
 
+
   virtual uint64_t getSize() const final;
   virtual int getLineSize() const final;
   virtual int getSetSize() const final;
@@ -132,9 +160,12 @@ class Cache {
   uint64_t getMisses() const;
   uint64_t getTotalAccesses() const;
   uint64_t getEvictions() const;
+  const std::map<uint64_t, uint64_t>& getLifetimes() const;
+
 
   /* Factory method for creating caches based on the given configuration */
-  static std::unique_ptr<Cache> make_cache(const CacheConfig& config);
+  static std::unique_ptr<Cache> make_cache(const CacheConfig& config,
+                                           const std::shared_ptr<const Clock> clock);
 
   /* Split a raw address into a tag, a set, a line, and a block, as mapped by this cache
    */

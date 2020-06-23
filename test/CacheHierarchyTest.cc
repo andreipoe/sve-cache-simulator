@@ -210,3 +210,13 @@ TEST_CASE("Bundles are counted correctly", "[hierarchy][stats][bundle]") {
   REQUIRE(bundles.at(0x40e200).times_encountered == 1);
   REQUIRE(bundles.at(0x40e200).total_ops == 6);
 }
+
+TEST_CASE("Hierarchy clock counts cycles correctly", "[hierarchy]") {
+  auto ch = make_default_hierarchy(CacheType::SetAssociative);
+  REQUIRE(ch->current_cycle() == 0);
+
+  const MemoryTrace trace { std::istringstream { TestTraces::SIMPLE5 } };
+  ch->touch(trace.getRequests());
+
+  REQUIRE(ch->current_cycle() == 5);
+}

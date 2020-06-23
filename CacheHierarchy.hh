@@ -11,6 +11,8 @@ struct BundleStats {
 };
 
 class CacheHierarchy {
+  // TODO: support inclusive and exclusive caches
+
   /* A 0-indexed list of cache levels (Ln is `levels[n-1]`) */
   std::vector<std::unique_ptr<Cache>> levels;
 
@@ -24,7 +26,11 @@ class CacheHierarchy {
    * ops */
   std::map<uint64_t, BundleStats> bundles;
 
-  // TODO: support inclusive and exclusive caches
+  /* A counter of how many requests this hierarchy has serviced so far. Each cache level
+   can read this shared counter, but only the hierarchy can cause it to tick */
+  const std::shared_ptr<Clock> clock_;
+
+  void constuctor_common_();
 
  public:
   CacheHierarchy(const std::vector<CacheConfig>& cache_configs);
@@ -37,6 +43,8 @@ class CacheHierarchy {
   int getLineSize(int level) const;
   int getSetSize(int level) const;
 
+  /* Returns the current value shown by the clock */
+  uint64_t current_cycle() const;
 
   /* Stats */
   uint64_t getHits(int level) const;
@@ -52,6 +60,9 @@ class CacheHierarchy {
 
   /* Get a mapping from scatter/gather PCs to number of accesses executed */
   std::map<uint64_t, BundleStats> getBundleOps() const;
+
+  /* Returns a histogram of how long cache lines last in the given cache level before being evicted */
+  const std::map<uint64_t,uint64_t> getLifetimes(int level) const;
 
 
   /* Accesses*/

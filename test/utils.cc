@@ -61,7 +61,7 @@ CacheConfig get_default_cache_config(CacheType type) {
 }
 
 std::unique_ptr<Cache> make_default_cache(CacheType type) {
-  return Cache::make_cache(get_default_cache_config(type));
+  return Cache::make_cache(get_default_cache_config(type), std::make_shared<Clock>());
 }
 
 std::unique_ptr<CacheHierarchy> make_default_hierarchy(CacheType type) {

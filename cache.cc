@@ -45,12 +45,18 @@ CacheAddress::CacheAddress(uint64_t address, const Cache& cache)
 
 // ------
 
-CacheEntry::CacheEntry(uint64_t tag) : tag(tag), valid(true) { }
+void CacheEntry::set(uint64_t tag, uint64_t timestamp) {
+  this->tag       = tag;
+  this->loaded_at = timestamp;
+  this->valid     = true;
+  this->age       = 0;
+}
 
 // ------
 
-Cache::Cache(const uint64_t size, const int line_size, const int set_size)
-    : size(size), line_size(line_size), set_size(set_size) {
+Cache::Cache(const uint64_t size, const int line_size, const int set_size,
+             const std::shared_ptr<const Clock> clock)
+    : size(size), line_size(line_size), set_size(set_size), clock_(clock) {
   if (size % line_size != 0)
     throw std::invalid_argument("Line size does not divide cache size");
   if (size % set_size != 0)
@@ -59,13 +65,17 @@ Cache::Cache(const uint64_t size, const int line_size, const int set_size)
     throw std::invalid_argument("Cache size is not a power of 2");
 }
 
-Cache::Cache(const CacheConfig& config)
-    : Cache(config.size, config.line_size, config.set_size) { }
+Cache::Cache(const CacheConfig& config, const std::shared_ptr<const Clock> clock)
+    : Cache(config.size, config.line_size, config.set_size, clock) { }
 
 Cache::~Cache() { }
 
 const CacheAddress Cache::split_address(const uint64_t address) const {
   return CacheAddress(address, *this);
+}
+
+void Cache::log_eviction(uint64_t loaded_at) {
+  lifetimes[clock_->current_cycle() - loaded_at]++;
 }
 
 CacheEvents Cache::touch(const uint64_t address, const int size) {
@@ -127,15 +137,17 @@ uint64_t Cache::getHits() const { return hits; }
 uint64_t Cache::getMisses() const { return misses; }
 uint64_t Cache::getTotalAccesses() const { return hits + misses; }
 uint64_t Cache::getEvictions() const { return evictions; }
+const std::map<uint64_t, uint64_t>& Cache::getLifetimes() const { return lifetimes; }
 
-std::unique_ptr<Cache> Cache::make_cache(const CacheConfig& config) {
+std::unique_ptr<Cache> Cache::make_cache(const CacheConfig& config,
+                                         const std::shared_ptr<const Clock> clock) {
   switch (config.type) {
     case CacheType::Infinite:
-      return std::make_unique<InfiniteCache>();
+      return std::make_unique<InfiniteCache>(clock);
     case CacheType::DirectMapped:
-      return std::make_unique<DirectMappedCache>(config);
+      return std::make_unique<DirectMappedCache>(config, clock);
     case CacheType::SetAssociative:
-      return std::make_unique<SetAssociativeCache>(config);
+      return std::make_unique<SetAssociativeCache>(config, clock);
     default:
       throw std::invalid_argument("Unknown cache type");
   }

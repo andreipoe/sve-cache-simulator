@@ -31,6 +31,8 @@ namespace {
 #define OPT_ENCODING_TEXT   1
 #define OPT_ENCODING_BINARY 2
 
+#define OPT_DEFAULT_LIFETIMES_FNAME "lifetimes.csv"
+
 #define SEPARATOR "----------"
 
 enum OutputFormatBits {
@@ -53,7 +55,8 @@ void usage(int code) {
   std::cout << "Usage:\n";
   std::cout << "  scs --binary [OPTIONS] -c CONFIG-FILE TRACE-FILE\n";
   std::cout << "  scs --text   [OPTIONS] -c CONFIG-FILE TRACE-FILE\n";
-  std::cout << "  scs --help\n\n";
+  std::cout << "  scs --help\n";
+  std::cout << "            \n";
   std::cout << "Options:\n";
   std::cout << "  -b, --batch BATCH-FILE        Treat all entries in BATCH-FILE as arguments to -c\n";
   std::cout << "                                Paths are relative to the batch file. May be specified more than once.\n";
@@ -63,6 +66,10 @@ void usage(int code) {
   std::cout << "                                Capped at `ncpus`. Default: min(" << DEFAULT_IO_THREADS << ", `ncpus`).\n";
   std::cout << "  -f, --format {text,csv,both}  Set the output format. Default: 'both' for single runs, 'csv' for batches.\n\n";
   std::cout << "  -t, --timings                 Report run times of the main stages.\n";
+  std::cout << "                                \n";
+  std::cout << "Additional Experiment Options:\n";
+  std::cout << "  -d, --save-lifetimes          Save a CSV histogram of cache line lifetimes (\"evict distance\").\n";
+  std::cout << "                                Produces one file per cache configuration.\n";
   // clang-format on
 
   std::exit(code);
@@ -76,6 +83,9 @@ void print_text_results(const CacheHierarchy& cache, const MemoryTrace& trace,
                         std::string_view config_fname);
 std::string make_csv_header(int max_levels);
 std::string make_csv_results(const CacheHierarchy& cache, std::string_view config_name);
+std::string make_csv_lifetimes_header();
+std::string make_csv_lifetimes(const CacheHierarchy& cache,
+                               const std::string& config_name);
 
 using timestamp = std::chrono::time_point<std::chrono::high_resolution_clock>;
 struct SimulationStats {
@@ -83,7 +93,7 @@ struct SimulationStats {
   std::shared_ptr<CacheHierarchy> cache;
 
   timestamp sim_start, sim_end;
-  std::string csv_results;
+  std::string csv_results, csv_lifetimes;
 
   SimulationStats(const std::string& sim_name,
                   const std::shared_ptr<CacheHierarchy> cache)
@@ -102,7 +112,8 @@ void print_timings(timestamp start, timestamp parse_end,
 int main(int argc, char* argv[]) {
   int opt, int_optarg;
   std::vector<std::string> config_fnames, batch_names;
-  bool encoding_provided { false }, enable_timing { false }, opt_f_used { false };
+  bool encoding_provided { false }, enable_timing { false }, opt_f_used { false },
+      save_lifetimes { false };
   int io_threads { DEFAULT_IO_THREADS };
   TraceFileType trace_encoding {};
   OutputFormat output_format { (1 << OUTPUT_BIT_COUNT) - 1 };
@@ -114,10 +125,11 @@ int main(int argc, char* argv[]) {
                                    { "io-threads", required_argument, NULL, 'p' },
                                    { "format", required_argument, NULL, 'f' },
                                    { "timings", no_argument, NULL, 't' },
+                                   { "save-lifetimes", no_argument, NULL, 'd' },
                                    { "help", no_argument, NULL, 'h' },
                                    { 0, 0, 0, 0 } };
 
-  while ((opt = getopt_long(argc, argv, "c:b:p:f:th", long_options, NULL)) != -1) {
+  while ((opt = getopt_long(argc, argv, "c:b:p:f:tdh", long_options, NULL)) != -1) {
     switch (opt) {
       // Config options
       case 'c':
@@ -158,6 +170,9 @@ int main(int argc, char* argv[]) {
         break;
       case 't':
         enable_timing = true;
+        break;
+      case 'd':
+        save_lifetimes = true;
         break;
 
       case 'h':
@@ -269,6 +284,8 @@ int main(int argc, char* argv[]) {
 
     if (output_format[BIT_OUTPUT_CSV])
       sim.csv_results = make_csv_results(*sim.cache, sim.sim_name);
+
+    if (save_lifetimes) sim.csv_lifetimes = make_csv_lifetimes(*sim.cache, sim.sim_name);
   }
 
 
@@ -277,6 +294,12 @@ int main(int argc, char* argv[]) {
 
     std::cout << make_csv_header(max_levels) << "\n";
     for (const auto& sim : simulation_stats) std::cout << sim.csv_results << "\n";
+  }
+
+  if (save_lifetimes) {
+    std::ofstream f { OPT_DEFAULT_LIFETIMES_FNAME };
+    f << make_csv_lifetimes_header() << "\n";
+    for (const auto& sim : simulation_stats) f << sim.csv_lifetimes << "\n";
   }
 
   const auto t_finish = std::chrono::high_resolution_clock::now();
@@ -418,4 +441,21 @@ void print_timings(timestamp start, timestamp parse_end,
     std::cout << "  Simulating " << sim.sim_name << " took " << sim_time << " s ("
               << sim_time_pct << "%)\n";
   }
+}
+
+
+std::string make_csv_lifetimes_header() {
+  return "config,level,time,count";
+}
+
+std::string make_csv_lifetimes(const CacheHierarchy& cache,
+                               const std::string& config_name) {
+  std::ostringstream csv;
+
+  for (int level = 1; level <= cache.nlevels(); level++)
+    for (auto const& lifetime : cache.getLifetimes(level)) {
+      csv << config_name << ',' << level << ',' << lifetime.first << ',' << lifetime.second << '\n';
+    }
+
+  return csv.str();
 }

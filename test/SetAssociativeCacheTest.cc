@@ -11,7 +11,8 @@ TEST_CASE("Set size must divide total cache size", "[model][set-associative]") {
   const CacheConfig config { CacheType::SetAssociative, DEFAULT_CACHE_SIZE,
                              DEFAULT_LINE_SIZE, set_size };
 
-  REQUIRE_THROWS_WITH(Cache::make_cache(config), "Set size does not divide cache size");
+  REQUIRE_THROWS_WITH(Cache::make_cache(config, std::make_shared<Clock>()),
+                      "Set size does not divide cache size");
 }
 
 TEST_CASE("Conflicting memory addresses evict previous set-associative data",
@@ -20,7 +21,7 @@ TEST_CASE("Conflicting memory addresses evict previous set-associative data",
   auto config              = get_default_cache_config(CacheType::SetAssociative);
   config.set_size          = associativity;
 
-  auto cache = Cache::make_cache(config);
+  auto cache = Cache::make_cache(config, std::make_shared<Clock>());
 
   // Generate an address
   const CacheAddress initial_address {

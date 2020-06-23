@@ -55,7 +55,8 @@ TEST_CASE("Constructing caches with non-power-of-2 sizes doesn't work",
                                   random<uint64_t>(0, static_cast<uint64_t>(1) << 48))));
     const CacheConfig config { type, size, 1 };
 
-    REQUIRE_THROWS_WITH(Cache::make_cache(config), "Cache size is not a power of 2");
+    REQUIRE_THROWS_WITH(Cache::make_cache(config, std::make_shared<Clock>()),
+                        "Cache size is not a power of 2");
   }
   SECTION("Line size must divide total cache size") {
     const int line_size = GENERATE(
@@ -63,7 +64,7 @@ TEST_CASE("Constructing caches with non-power-of-2 sizes doesn't work",
                                   random(0, DEFAULT_CACHE_SIZE))));
     const CacheConfig config { type, DEFAULT_CACHE_SIZE, line_size };
 
-    REQUIRE_THROWS_WITH(Cache::make_cache(config),
+    REQUIRE_THROWS_WITH(Cache::make_cache(config, std::make_shared<Clock>()),
                         "Line size does not divide cache size");
   }
 }

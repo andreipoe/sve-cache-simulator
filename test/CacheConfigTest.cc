@@ -54,12 +54,14 @@ TEST_CASE("Reading cache configuration from parameter maps works", "[config][par
 }
 
 TEST_CASE("make_cache makes the right type of cache", "[config][utils]") {
-  std::unique_ptr<Cache> ic = Cache::make_cache({ CacheType::Infinite, 0, 0 });
-  const auto& ic_ref        = *ic.get();
+  std::unique_ptr<Cache> ic =
+      Cache::make_cache({ CacheType::Infinite, 0, 0 }, std::make_shared<Clock>());
+  const auto& ic_ref = *ic.get();
   REQUIRE(typeid(ic_ref).hash_code() == typeid(InfiniteCache).hash_code());
 
-  std::unique_ptr<Cache> dmc = Cache::make_cache({ CacheType::DirectMapped, 1024, 64 });
-  const auto& dmc_ref        = *dmc.get();
+  std::unique_ptr<Cache> dmc =
+      Cache::make_cache({ CacheType::DirectMapped, 1024, 64 }, std::make_shared<Clock>());
+  const auto& dmc_ref = *dmc.get();
   REQUIRE(typeid(dmc_ref).hash_code() == typeid(DirectMappedCache).hash_code());
 }
 
@@ -67,7 +69,7 @@ TEST_CASE("Constructed caches have parameters given in CacheConfig", "[config]")
   uint64_t size { 4 * 1024 };
   int line_size { 512 };
   const CacheConfig config { CacheType::DirectMapped, size, line_size };
-  const DirectMappedCache cache(config);
+  const DirectMappedCache cache(config, std::make_shared<Clock>());
 
   REQUIRE(cache.getType() == CacheType::DirectMapped);
   REQUIRE(cache.getSize() == size);
@@ -83,8 +85,7 @@ TEST_CASE("Config files with a single-level hierarchy produce a single cache",
       "line_size = 64";
 
   SECTION("...if the section is called L1") {
-    REQUIRE_NOTHROW(
-        CacheConfig { std::istringstream { header + "[L1]\n" + params } });
+    REQUIRE_NOTHROW(CacheConfig { std::istringstream { header + "[L1]\n" + params } });
   }
   SECTION("...unless the section is named incorrectly") {
     REQUIRE_THROWS_WITH(

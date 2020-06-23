@@ -7,11 +7,8 @@
 
 #define KEY_NLEVELS "levels"
 
-CacheHierarchy::CacheHierarchy(const std::vector<CacheConfig>& cache_configs)
-    : traffic(cache_configs.size() + 1, 0) {
-  levels.reserve(cache_configs.size());
-  for (const auto& config : cache_configs) levels.push_back(Cache::make_cache(config));
 
+void CacheHierarchy::constuctor_common_() {
   if (std::any_of(std::begin(levels), std::end(levels),
                   [&](const std::unique_ptr<Cache>& c) {
                     return c->getLineSize() != levels[0]->getLineSize();
@@ -20,7 +17,17 @@ CacheHierarchy::CacheHierarchy(const std::vector<CacheConfig>& cache_configs)
         "Cache hierarchy does not have the same line size throughout");
 }
 
-CacheHierarchy::CacheHierarchy(std::istream&& config_file) {
+CacheHierarchy::CacheHierarchy(const std::vector<CacheConfig>& cache_configs)
+    : traffic(cache_configs.size() + 1, 0), clock_(std::make_shared<Clock>()) {
+  levels.reserve(cache_configs.size());
+  for (const auto& config : cache_configs)
+    levels.push_back(Cache::make_cache(config, clock_));
+
+  constuctor_common_();
+}
+
+CacheHierarchy::CacheHierarchy(std::istream&& config_file)
+    : clock_(std::make_shared<Clock>()) {
   inipp::Ini<char> ini;
   ini.parse(config_file);
 
@@ -48,16 +55,17 @@ CacheHierarchy::CacheHierarchy(std::istream&& config_file) {
     }
 
     const auto this_level_section = ini.sections.at(this_level_header);
-    levels.push_back(Cache::make_cache({ this_level_section }));
+    levels.push_back(Cache::make_cache({ this_level_section }, clock_));
   }
 
-  if (std::any_of(std::begin(levels), std::end(levels),
-                  [&](const std::unique_ptr<Cache>& c) {
-                    return c->getLineSize() != levels[0]->getLineSize();
-                  }))
-    throw std::invalid_argument(
-        "Cache hierarchy does not have the same line size throughout");
+  constuctor_common_();
 }
+
+// ------
+
+uint64_t CacheHierarchy::current_cycle() const { return clock_->current_cycle(); }
+
+// ------
 
 int CacheHierarchy::nlevels() const { return levels.size(); }
 
@@ -90,6 +98,11 @@ uint64_t CacheHierarchy::getTraffic(int from_level) const { return traffic[from_
 
 std::map<uint64_t, BundleStats> CacheHierarchy::getBundleOps() const { return bundles; }
 
+const std::map<uint64_t,uint64_t> CacheHierarchy::getLifetimes(int level) const {
+  return levels[level-1]->getLifetimes();
+}
+
+// ------
 
 void CacheHierarchy::touch(uint64_t address, int size) {
   const int line_size = levels[0]->getLineSize();
@@ -121,6 +134,8 @@ void CacheHierarchy::touch(uint64_t address, int size) {
     remaining_size -= covered_bytes;
     next_address += covered_bytes;
   }
+
+  clock_->tick();
 }
 
 void CacheHierarchy::touch(SizedAccess access) { touch(access.address, access.size); }
