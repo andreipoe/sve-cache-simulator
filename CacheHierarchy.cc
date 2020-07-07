@@ -105,7 +105,8 @@ std::unique_ptr<std::map<uint64_t, uint64_t>> CacheHierarchy::getLifetimes(
 
 // ------
 
-void CacheHierarchy::touch(uint64_t address, int size, bool is_write) {
+void CacheHierarchy::touch(uint64_t address, int size,
+                           __attribute__((unused)) bool is_write) {
   const int line_size = levels[0]->getLineSize();
 
   traffic[0] += size;
@@ -122,9 +123,10 @@ void CacheHierarchy::touch(uint64_t address, int size, bool is_write) {
       const auto& cache_address = levels[current_level]->split_address(next_address);
       const auto events         = levels[current_level]->touch(cache_address);
 
-      // If this access is a write, we touch all levels of the cache (writeback)
-      // Otherwise, we stop on a (read) hit
-      if (!is_write && events.hit()) break;
+      // If counting writebacks as accesses, only break if the access is not a write
+      // But doing so seems to hugely increase the number of accesses, unlike what
+      // hardware counters report
+      if (events.hit()) break;
 
       traffic[current_level + 1] += line_size;
     }

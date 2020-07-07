@@ -236,7 +236,7 @@ TEST_CASE("Lifetimes are computed correctly", "[hierarchy][stats]") {
   REQUIRE(lifetimes->at(n) == 2);
 }
 
-TEST_CASE("Write requests generate writeback traffic even on hit", "[hierarchy]") {
+TEST_CASE("Write requests generate writeback traffic even on hit", "[.writeback]") {
   const int levels = 3;
   std::vector<CacheConfig> configs(levels,
                                    get_default_cache_config(CacheType::SetAssociative));
