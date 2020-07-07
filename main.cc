@@ -81,7 +81,7 @@ TraceFileType guess_file_type(const std::string& fname);
 std::string config_name_from_fname(std::string_view fname);
 void print_text_results(const CacheHierarchy& cache, const MemoryTrace& trace,
                         std::string_view config_fname);
-std::string make_csv_header(int max_levels);
+std::string make_csv_header();
 std::string make_csv_results(const CacheHierarchy& cache, std::string_view config_name);
 std::string make_csv_lifetimes_header();
 std::string make_csv_lifetimes(const CacheHierarchy& cache,
@@ -292,8 +292,8 @@ int main(int argc, char* argv[]) {
   if (output_format[BIT_OUTPUT_CSV]) {
     if (output_format[BIT_OUTPUT_TEXT]) std::cout << SEPARATOR "\n";
 
-    std::cout << make_csv_header(max_levels) << "\n";
-    for (const auto& sim : simulation_stats) std::cout << sim.csv_results << "\n";
+    std::cout << make_csv_header() << "\n";
+    for (const auto& sim : simulation_stats) std::cout << sim.csv_results;
   }
 
   if (save_lifetimes) {
@@ -389,32 +389,21 @@ void print_text_results(const CacheHierarchy& cache, const MemoryTrace& trace,
   std::cout << ss.str();
 }
 
-std::string make_csv_header(int max_levels) {
-  std::ostringstream csv_header;
-
-  csv_header << "config,CPU-L1-traffic,";
-  for (int level = 1; level <= max_levels; level++) {
-    const std::string this_level = "L" + std::to_string(level);
-    const std::string next_level = "L" + std::to_string(level + 1);
-
-    csv_header << this_level << "-miss-pct," << this_level << "-evictions," << this_level
-               << '-' << next_level << "-traffic,";
-  }
-
-  return csv_header.str();
+std::string make_csv_header() {
+  return "config,level,accesses,misses,evictions,traffic-up";
 }
 
 std::string make_csv_results(const CacheHierarchy& cache, std::string_view config_name) {
   std::ostringstream csv;
 
-  csv << config_name << ',' << cache.getTraffic(0) << ',';
   for (int level = 1; level <= cache.nlevels(); level++) {
     const auto total      = cache.getTotalAccesses(level);
     const auto misses     = cache.getMisses(level);
-    const auto pct_misses = (static_cast<double>(misses) / total) * 100.0;
+    const auto evictions  = cache.getEvictions(level);
+    const auto traffic_up = cache.getTraffic(level);
 
-    csv << pct_misses << ',' << cache.getEvictions(level) << ','
-        << cache.getTraffic(level) << ',';
+    csv << config_name << ',' << level << ',' << total  << ','
+        << misses << ',' << evictions << ',' << traffic_up << '\n';
   }
 
   return csv.str();
