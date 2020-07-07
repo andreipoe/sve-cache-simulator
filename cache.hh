@@ -120,6 +120,9 @@ class Cache {
    * evicted on this cycle */
   void log_eviction(uint64_t loaded_at);
 
+  /* Returns a a liftime map for the elements still in the cache */
+  virtual std::unique_ptr<std::map<uint64_t, uint64_t>> getActiveLifetimes() const = 0;
+
  public:
   virtual ~Cache();
 
@@ -160,7 +163,7 @@ class Cache {
   uint64_t getMisses() const;
   uint64_t getTotalAccesses() const;
   uint64_t getEvictions() const;
-  const std::map<uint64_t, uint64_t>& getLifetimes() const;
+  virtual std::unique_ptr<std::map<uint64_t, uint64_t>> getLifetimes() const final;
 
 
   /* Factory method for creating caches based on the given configuration */

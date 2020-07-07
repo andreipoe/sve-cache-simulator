@@ -221,6 +221,21 @@ TEST_CASE("Hierarchy clock counts cycles correctly", "[hierarchy]") {
   REQUIRE(ch->current_cycle() == 5);
 }
 
+TEST_CASE("Lifetimes are computed correctly", "[hierarchy][stats]") {
+  auto ch = make_default_hierarchy(CacheType::DirectMapped);
+
+  const int n            = 3;
+  const uint64_t address = GENERATE(take(DEFAULT_RANDOM_COUNT, random_addresses()));
+
+  for (int i = 0; i < n; i++) ch->touch(address + i * DEFAULT_LINE_SIZE);
+  ch->touch(address + DEFAULT_CACHE_SIZE);
+
+  const auto lifetimes = ch->getLifetimes(1);
+  REQUIRE(lifetimes->size() == n);
+  for (int i = 1; i < n; i++) REQUIRE(lifetimes->at(i) == 1);
+  REQUIRE(lifetimes->at(n) == 2);
+}
+
 TEST_CASE("Write requests generate writeback traffic even on hit", "[hierarchy]") {
   const int levels = 3;
   std::vector<CacheConfig> configs(levels,

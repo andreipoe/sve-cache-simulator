@@ -137,7 +137,15 @@ uint64_t Cache::getHits() const { return hits; }
 uint64_t Cache::getMisses() const { return misses; }
 uint64_t Cache::getTotalAccesses() const { return hits + misses; }
 uint64_t Cache::getEvictions() const { return evictions; }
-const std::map<uint64_t, uint64_t>& Cache::getLifetimes() const { return lifetimes; }
+
+std::unique_ptr<std::map<uint64_t, uint64_t>> Cache::getLifetimes() const {
+  // The `lifetime` map only has data items already evicted, so make a copy and add data
+  // for everything still in the cache
+  auto merged_map = getActiveLifetimes();
+  for (const auto& [life, count] : lifetimes) (*merged_map)[life] += count;
+
+  return merged_map;
+}
 
 std::unique_ptr<Cache> Cache::make_cache(const CacheConfig& config,
                                          const std::shared_ptr<const Clock> clock) {

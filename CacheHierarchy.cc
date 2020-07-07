@@ -98,7 +98,8 @@ uint64_t CacheHierarchy::getTraffic(int from_level) const { return traffic[from_
 
 std::map<uint64_t, BundleStats> CacheHierarchy::getBundleOps() const { return bundles; }
 
-const std::map<uint64_t, uint64_t> CacheHierarchy::getLifetimes(int level) const {
+std::unique_ptr<std::map<uint64_t, uint64_t>> CacheHierarchy::getLifetimes(
+    int level) const {
   return levels[level - 1]->getLifetimes();
 }
 

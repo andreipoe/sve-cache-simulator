@@ -444,18 +444,19 @@ void print_timings(timestamp start, timestamp parse_end,
 }
 
 
-std::string make_csv_lifetimes_header() {
-  return "config,level,time,count";
-}
+std::string make_csv_lifetimes_header() { return "config,level,time,count"; }
 
 std::string make_csv_lifetimes(const CacheHierarchy& cache,
                                const std::string& config_name) {
   std::ostringstream csv;
 
-  for (int level = 1; level <= cache.nlevels(); level++)
-    for (auto const& lifetime : cache.getLifetimes(level)) {
-      csv << config_name << ',' << level << ',' << lifetime.first << ',' << lifetime.second << '\n';
+  for (int level = 1; level <= cache.nlevels(); level++) {
+    const auto lifetimes = cache.getLifetimes(level);
+    for (const auto& lifetime : *lifetimes) {
+      csv << config_name << ',' << level << ',' << lifetime.first << ','
+          << lifetime.second << '\n';
     }
+  }
 
   return csv.str();
 }

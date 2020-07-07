@@ -18,4 +18,10 @@ CacheEvents InfiniteCache::touch(const CacheAddress& cache_address) {
   return events;
 }
 
+/* Returns a a liftime map for the elements still in the cache */
+std::unique_ptr<std::map<uint64_t, uint64_t>> InfiniteCache::getActiveLifetimes() const {
+  throw std::logic_error("Infinite caches don't implement lifetimes");
+  return std::make_unique<std::map<uint64_t,uint64_t>>();
+}
+
 CacheType InfiniteCache::getType() const { return CacheType::Infinite; }

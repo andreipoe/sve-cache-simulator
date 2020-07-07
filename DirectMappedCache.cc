@@ -26,4 +26,14 @@ CacheEvents DirectMappedCache::touch(const CacheAddress& cache_address) {
   return events;
 }
 
+/* Returns a a liftime map for the elements still in the cache */
+std::unique_ptr<std::map<uint64_t, uint64_t>> DirectMappedCache::getActiveLifetimes()
+    const {
+  auto active_lifetimes = std::make_unique<std::map<uint64_t, uint64_t>>();
+  for (auto const& line : cache_lines)
+    if (line.valid) (*active_lifetimes)[clock_->current_cycle() - line.loaded_at]++;
+
+  return active_lifetimes;
+}
+
 CacheType DirectMappedCache::getType() const { return CacheType::DirectMapped; }

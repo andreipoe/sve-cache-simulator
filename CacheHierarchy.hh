@@ -61,8 +61,9 @@ class CacheHierarchy {
   /* Get a mapping from scatter/gather PCs to number of accesses executed */
   std::map<uint64_t, BundleStats> getBundleOps() const;
 
-  /* Returns a histogram of how long cache lines last in the given cache level before being evicted */
-  const std::map<uint64_t,uint64_t> getLifetimes(int level) const;
+  /* Returns a histogram of how long cache lines last in the given cache level before
+   * being evicted */
+  std::unique_ptr<std::map<uint64_t, uint64_t>> getLifetimes(int level) const;
 
 
   /* Accesses*/
