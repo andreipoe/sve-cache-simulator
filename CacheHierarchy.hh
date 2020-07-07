@@ -67,20 +67,10 @@ class CacheHierarchy {
 
   /* Accesses*/
   /* Run a single request through the cache hierarchy */
-  void touch(uint64_t address, int size = 1);
-
-  /* Run a single request through the cache hierarchy */
-  void touch(SizedAccess access);
+  void touch(uint64_t address, int size = 1, bool is_write = false);
 
   /* Run a single request through the cache hierarchy */
   void touch(MemoryRequest request);
-
-  /* Run a sequence of addresses through the cache hierarchy,
-   * assuming the access doesn't cross cache-line boundaries */
-  void touch(const std::vector<uint64_t>& addresses);
-
-  /* Run a sequence of access through the cache hierarchy */
-  void touch(const std::vector<SizedAccess>& accesses);
 
   /* Run a sequence of requests through the cache hierarchy */
   void touch(const std::vector<MemoryRequest>& requests);

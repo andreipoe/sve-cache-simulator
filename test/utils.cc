@@ -55,6 +55,10 @@ std::vector<uint64_t> get_random_unique_addresses(int n, uint64_t except) {
   return std::vector(addresses.begin(), addresses.end());
 }
 
+MemoryRequest make_mem_request(uint64_t address, int size, bool is_write) {
+  return MemoryRequest{0, size, 0, is_write, address, 0};
+}
+
 CacheConfig get_default_cache_config(CacheType type) {
   int set_size = type == CacheType::SetAssociative ? DEFAULT_SET_SIZE : 1;
   return { type, DEFAULT_CACHE_SIZE, DEFAULT_LINE_SIZE, set_size };

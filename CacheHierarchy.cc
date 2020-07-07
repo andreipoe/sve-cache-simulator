@@ -98,13 +98,13 @@ uint64_t CacheHierarchy::getTraffic(int from_level) const { return traffic[from_
 
 std::map<uint64_t, BundleStats> CacheHierarchy::getBundleOps() const { return bundles; }
 
-const std::map<uint64_t,uint64_t> CacheHierarchy::getLifetimes(int level) const {
-  return levels[level-1]->getLifetimes();
+const std::map<uint64_t, uint64_t> CacheHierarchy::getLifetimes(int level) const {
+  return levels[level - 1]->getLifetimes();
 }
 
 // ------
 
-void CacheHierarchy::touch(uint64_t address, int size) {
+void CacheHierarchy::touch(uint64_t address, int size, bool is_write) {
   const int line_size = levels[0]->getLineSize();
 
   traffic[0] += size;
@@ -113,20 +113,20 @@ void CacheHierarchy::touch(uint64_t address, int size) {
   int remaining_size { size };
 
   while (remaining_size > 0) {
-    CacheEvents events;
-    int current_level { 0 };
 
     // Go through cache levels in reverse order until either all accesses are hits or
     // we've reached the top level
-    do {
+    for (int current_level = 0; current_level < nlevels(); current_level++) {
       // Find the first cache line this request touches
-      auto const& cache_address = levels[current_level]->split_address(next_address);
-      events                    = levels[current_level]->touch(cache_address);
+      const auto& cache_address = levels[current_level]->split_address(next_address);
+      const auto events         = levels[current_level]->touch(cache_address);
 
-      if (!events.hit()) traffic[current_level + 1] += line_size;
+      // If this access is a write, we touch all levels of the cache (writeback)
+      // Otherwise, we stop on a (read) hit
+      if (!is_write && events.hit()) break;
 
-      current_level++;
-    } while (!events.hit() && current_level < nlevels());
+      traffic[current_level + 1] += line_size;
+    }
 
     // Skip over the remaining bytes in this same cache line
     const unsigned int covered_bytes =
@@ -138,22 +138,12 @@ void CacheHierarchy::touch(uint64_t address, int size) {
   clock_->tick();
 }
 
-void CacheHierarchy::touch(SizedAccess access) { touch(access.address, access.size); }
-
 void CacheHierarchy::touch(MemoryRequest request) {
   if (request.is_bundle()) {
     bundles[request.pc].total_ops++;
     if (request.is_bundle_start()) bundles[request.pc].times_encountered++;
   }
-  touch(request.address, request.size);
-}
-
-void CacheHierarchy::touch(const std::vector<uint64_t>& addresses) {
-  for (auto const& a : addresses) touch(a);
-}
-
-void CacheHierarchy::touch(const std::vector<SizedAccess>& accesses) {
-  for (auto const& a : accesses) touch(a);
+  touch(request.address, request.size, request.is_write);
 }
 
 void CacheHierarchy::touch(const std::vector<MemoryRequest>& requests) {

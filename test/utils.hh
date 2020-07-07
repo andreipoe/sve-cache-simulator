@@ -41,6 +41,9 @@ uint64_t get_random_address();
 /* Generate a set of unique random address */
 std::vector<uint64_t> get_random_unique_addresses(int n, uint64_t except = 0);
 
+/* Create a memory access from given or default parameters */
+MemoryRequest make_mem_request(uint64_t address, int size = DEFAULT_LINE_SIZE, bool is_write = false);
+
 /* Get the config for the specified cache type, using the default testing parameters */
 CacheConfig get_default_cache_config(CacheType type);
 

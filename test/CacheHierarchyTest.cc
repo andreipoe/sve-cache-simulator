@@ -144,7 +144,7 @@ TEST_CASE("Sized access touched the correct number of cache lines thorough a hie
   const int lines_touched = GENERATE(range(1, 5));
   auto ch                 = make_default_hierarchy(CacheType::SetAssociative);
 
-  const SizedAccess access = { 0, lines_touched * ch->getLineSize(1) };
+  const auto access = make_mem_request(0, lines_touched * ch->getLineSize(1));
   ch->touch(access);
 
   REQUIRE(ch->getMisses(1) == static_cast<uint64_t>(lines_touched));
@@ -219,4 +219,40 @@ TEST_CASE("Hierarchy clock counts cycles correctly", "[hierarchy]") {
   ch->touch(trace.getRequests());
 
   REQUIRE(ch->current_cycle() == 5);
+}
+
+TEST_CASE("Write requests generate writeback traffic even on hit", "[hierarchy]") {
+  const int levels = 3;
+  std::vector<CacheConfig> configs(levels,
+                                   get_default_cache_config(CacheType::SetAssociative));
+
+  for (int i = 1; i < levels; i++) configs[i].size = configs[i - 1].size * 2;
+  CacheHierarchy ch { configs };
+
+  const uint64_t address = GENERATE(take(DEFAULT_RANDOM_COUNT, random_addresses()));
+
+  // First write: miss everywhere
+  ch.touch(address, 1, true);
+  for (int i = 0; i < levels; i++) {
+    REQUIRE(ch.getTotalAccesses(i + 1) == 1);
+    REQUIRE(ch.getMisses(i + 1) == 1);
+  }
+
+  // Read: hit L1, only access L1
+  ch.touch(address, 1, false);
+  REQUIRE(ch.getTotalAccesses(1) == 2);
+  REQUIRE(ch.getMisses(1) == 1);
+  for (int i = 2; i <= levels; i++) {
+    REQUIRE(ch.getTotalAccesses(i) == 1);
+    REQUIRE(ch.getMisses(i) == 1);
+  }
+
+  // Write: hit L1, access all levels
+  ch.touch(address, 1, true);
+  REQUIRE(ch.getTotalAccesses(1) == 3);
+  REQUIRE(ch.getMisses(1) == 1);
+  for (int i = 2; i <= levels; i++) {
+    REQUIRE(ch.getTotalAccesses(i) == 2);
+    REQUIRE(ch.getMisses(i) == 1);
+  }
 }
