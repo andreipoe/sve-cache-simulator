@@ -32,6 +32,7 @@ namespace {
 #define OPT_ENCODING_BINARY 2
 
 #define OPT_DEFAULT_LIFETIMES_FNAME "lifetimes.csv"
+#define OPT_DEFAULT_BUNDLES_FNAME "bundles.csv"
 
 #define SEPARATOR "----------"
 
@@ -69,7 +70,7 @@ void usage(int code) {
   std::cout << "                                \n";
   std::cout << "Additional Experiment Options:\n";
   std::cout << "  -d, --save-lifetimes          Save a CSV histogram of cache line lifetimes (\"evict distance\").\n";
-  std::cout << "                                Produces one file per cache configuration.\n";
+  std::cout << "  -l, --save-bundles            Save a CSV list of SVE bundles encountered.\n";
   // clang-format on
 
   std::exit(code);
@@ -86,6 +87,9 @@ std::string make_csv_results(const CacheHierarchy& cache, std::string_view confi
 std::string make_csv_lifetimes_header();
 std::string make_csv_lifetimes(const CacheHierarchy& cache,
                                const std::string& config_name);
+std::string make_csv_bundles_header();
+std::string make_csv_bundles(const CacheHierarchy& cache,
+                               const std::string& config_name);
 
 using timestamp = std::chrono::time_point<std::chrono::high_resolution_clock>;
 struct SimulationStats {
@@ -93,7 +97,7 @@ struct SimulationStats {
   std::shared_ptr<CacheHierarchy> cache;
 
   timestamp sim_start, sim_end;
-  std::string csv_results, csv_lifetimes;
+  std::string csv_results, csv_lifetimes, csv_bundles;
 
   SimulationStats(const std::string& sim_name,
                   const std::shared_ptr<CacheHierarchy> cache)
@@ -113,7 +117,7 @@ int main(int argc, char* argv[]) {
   int opt, int_optarg;
   std::vector<std::string> config_fnames, batch_names;
   bool encoding_provided { false }, enable_timing { false }, opt_f_used { false },
-      save_lifetimes { false };
+      save_lifetimes { false }, save_bundles {false};
   int io_threads { DEFAULT_IO_THREADS };
   TraceFileType trace_encoding {};
   OutputFormat output_format { (1 << OUTPUT_BIT_COUNT) - 1 };
@@ -126,10 +130,11 @@ int main(int argc, char* argv[]) {
                                    { "format", required_argument, NULL, 'f' },
                                    { "timings", no_argument, NULL, 't' },
                                    { "save-lifetimes", no_argument, NULL, 'd' },
+                                   { "save-bundles", no_argument, NULL, 'l' },
                                    { "help", no_argument, NULL, 'h' },
                                    { 0, 0, 0, 0 } };
 
-  while ((opt = getopt_long(argc, argv, "c:b:p:f:tdh", long_options, NULL)) != -1) {
+  while ((opt = getopt_long(argc, argv, "c:b:p:f:tdlh", long_options, NULL)) != -1) {
     switch (opt) {
       // Config options
       case 'c':
@@ -173,6 +178,9 @@ int main(int argc, char* argv[]) {
         break;
       case 'd':
         save_lifetimes = true;
+        break;
+      case 'l':
+        save_bundles = true;
         break;
 
       case 'h':
@@ -286,6 +294,7 @@ int main(int argc, char* argv[]) {
       sim.csv_results = make_csv_results(*sim.cache, sim.sim_name);
 
     if (save_lifetimes) sim.csv_lifetimes = make_csv_lifetimes(*sim.cache, sim.sim_name);
+    if (save_bundles) sim.csv_bundles = make_csv_bundles(*sim.cache, sim.sim_name);
   }
 
 
@@ -296,10 +305,16 @@ int main(int argc, char* argv[]) {
     for (const auto& sim : simulation_stats) std::cout << sim.csv_results;
   }
 
+  // Additional experiments
   if (save_lifetimes) {
     std::ofstream f { OPT_DEFAULT_LIFETIMES_FNAME };
     f << make_csv_lifetimes_header() << "\n";
     for (const auto& sim : simulation_stats) f << sim.csv_lifetimes << "\n";
+  }
+  if (save_bundles) {
+    std::ofstream f { OPT_DEFAULT_BUNDLES_FNAME };
+    f << make_csv_bundles_header() << "\n";
+    for (const auto& sim : simulation_stats) f << sim.csv_bundles << "\n";
   }
 
   const auto t_finish = std::chrono::high_resolution_clock::now();
@@ -433,6 +448,8 @@ void print_timings(timestamp start, timestamp parse_end,
 }
 
 
+// Additional experiments
+
 std::string make_csv_lifetimes_header() { return "config,level,time,count"; }
 
 std::string make_csv_lifetimes(const CacheHierarchy& cache,
@@ -445,6 +462,21 @@ std::string make_csv_lifetimes(const CacheHierarchy& cache,
       csv << config_name << ',' << level << ',' << lifetime.first << ','
           << lifetime.second << '\n';
     }
+  }
+
+  return csv.str();
+}
+
+std::string make_csv_bundles_header() { return "config,pc,size,count"; }
+
+std::string make_csv_bundles(const CacheHierarchy& cache,
+                               const std::string& config_name) {
+  std::ostringstream csv;
+
+  const auto bundles = cache.getBundleOps();
+  for (const auto& [pc, bundle] : bundles) {
+    csv << config_name << ",0x" << std::hex << pc << std::dec << ','
+        << bundle.total_ops << ',' << bundle.times_encountered << '\n';
   }
 
   return csv.str();
