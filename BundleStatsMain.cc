@@ -55,8 +55,10 @@ int main(int argc, char* argv[]) {
     } while (!requests[i].is_bundle_end());
 
     const auto& bundle_end = requests[i];
+    const auto range_start = std::min(bundle_start.address, bundle_end.address);
+    const auto range_end = std::max(bundle_start.address, bundle_end.address);
     this_bundle.address_delta =
-        bundle_end.address + bundle_end.size - bundle_start.address;
+        range_end - range_start + bundle_end.size;
 
     bundles[this_bundle]++;
   }
