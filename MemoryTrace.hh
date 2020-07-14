@@ -31,6 +31,10 @@ struct MemoryRequest {
 
 enum class TraceFileType { Text, Binary };
 
+namespace MemoryTraceTools {
+TraceFileType guess_file_type(const std::string& fname);
+}  // namespace MemoryTraceTools
+
 /* Represents an ArmIE memory trace */
 class MemoryTrace {
   std::vector<MemoryRequest> requests;
@@ -39,7 +43,8 @@ class MemoryTrace {
   inline void construct_from_text_(std::istream& tracefile);
   inline void construct_from_text_(const std::string& trace_fname);
   inline void construct_from_binary_serial_(std::istream& tracefile);
-  inline void construct_from_binary_parallel_(const std::string& trace_fname, int io_threads);
+  inline void construct_from_binary_parallel_(const std::string& trace_fname,
+                                              int io_threads);
 
  public:
   /* Construct a MemoryTrace object from a trace file.
@@ -53,7 +58,7 @@ class MemoryTrace {
      Binary traces are read in parallel */
   explicit MemoryTrace(const std::string& trace_fname,
                        TraceFileType ftype = TraceFileType::Text,
-                       int io_threads = DEFAULT_IO_THREADS);
+                       int io_threads      = DEFAULT_IO_THREADS);
 
   const std::vector<MemoryRequest> getRequests() const;
   const std::vector<uint64_t> getRequestAddresses() const;

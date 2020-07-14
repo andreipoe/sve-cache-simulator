@@ -76,6 +76,15 @@ converter_exe = executable('convert-trace', src_converter_common, src_converter_
     dependencies: m_dep)
 
 
+# ------- Bundle Stats -------
+src_bundle_stats = files('BundleStatsMain.cc', 'MemoryTrace.cc')
+bundle_stats_exe = executable('bundle-stats', src_bundle_stats,
+    cpp_args: cpp_args,
+    link_args: link_args,
+    build_rpath: rpath,
+    dependencies: m_dep)
+
+
 # ------- Tests -------
 src_test = files([
   'test/CacheConfigTest.cc',

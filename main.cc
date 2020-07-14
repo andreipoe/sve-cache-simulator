@@ -32,7 +32,7 @@ namespace {
 #define OPT_ENCODING_BINARY 2
 
 #define OPT_DEFAULT_LIFETIMES_FNAME "lifetimes.csv"
-#define OPT_DEFAULT_BUNDLES_FNAME "bundles.csv"
+#define OPT_DEFAULT_BUNDLES_FNAME   "bundles.csv"
 
 #define SEPARATOR "----------"
 
@@ -78,7 +78,6 @@ void usage(int code) {
 
 }  // namespace
 
-TraceFileType guess_file_type(const std::string& fname);
 std::string config_name_from_fname(std::string_view fname);
 void print_text_results(const CacheHierarchy& cache, const MemoryTrace& trace,
                         std::string_view config_fname);
@@ -88,8 +87,7 @@ std::string make_csv_lifetimes_header();
 std::string make_csv_lifetimes(const CacheHierarchy& cache,
                                const std::string& config_name);
 std::string make_csv_bundles_header();
-std::string make_csv_bundles(const CacheHierarchy& cache,
-                               const std::string& config_name);
+std::string make_csv_bundles(const CacheHierarchy& cache, const std::string& config_name);
 
 using timestamp = std::chrono::time_point<std::chrono::high_resolution_clock>;
 struct SimulationStats {
@@ -117,7 +115,7 @@ int main(int argc, char* argv[]) {
   int opt, int_optarg;
   std::vector<std::string> config_fnames, batch_names;
   bool encoding_provided { false }, enable_timing { false }, opt_f_used { false },
-      save_lifetimes { false }, save_bundles {false};
+      save_lifetimes { false }, save_bundles { false };
   int io_threads { DEFAULT_IO_THREADS };
   TraceFileType trace_encoding {};
   OutputFormat output_format { (1 << OUTPUT_BIT_COUNT) - 1 };
@@ -222,7 +220,11 @@ int main(int argc, char* argv[]) {
   std::ostringstream info_output;
 
   const std::string trace_fname { argv[0] };
-  if (!encoding_provided) trace_encoding = guess_file_type(argv[0]);
+  if (!encoding_provided) try {
+      trace_encoding = MemoryTraceTools::guess_file_type(argv[0]);
+    } catch (const std::invalid_argument& e) {
+      std::exit(EXIT_INVALID_TRACE);
+    }
 
   info_output << "Trace file encoding: ";
   switch (trace_encoding) {
@@ -236,10 +238,8 @@ int main(int argc, char* argv[]) {
       info_output << "unknown\n";
       std::exit(EXIT_UNKOWN_ENCODING);
   }
-  if (encoding_provided)
-    info_output << "\n";
-  else
-    info_output << " (guessed)\n";
+  if (!encoding_provided) info_output << " (guessed)";
+  info_output << "\n";
 
   if (output_format[BIT_OUTPUT_TEXT]) std::cout << info_output.str();
 
@@ -324,25 +324,6 @@ int main(int argc, char* argv[]) {
 }
 
 
-/* Guess if the given file is a text file */
-TraceFileType guess_file_type(const std::string& fname) {
-  std::ifstream f { fname };
-
-  if (!f.is_open()) {
-    std::cout << "Cannot open trace file: " << fname << "\n";
-    std::exit(EXIT_INVALID_TRACE);
-  }
-
-  const size_t check_count { 500 };
-  std::unique_ptr<char> data { new char[check_count + 1] };
-  f.read(data.get(), check_count);
-
-  if (std::memchr(data.get(), '\0', check_count) != NULL)
-    return TraceFileType::Binary;
-  else
-    return TraceFileType::Text;
-}
-
 /* Makes a config name from a given file name by taking the basename and removing the
  * extension */
 std::string config_name_from_fname(std::string_view fname) {
@@ -417,8 +398,8 @@ std::string make_csv_results(const CacheHierarchy& cache, std::string_view confi
     const auto evictions  = cache.getEvictions(level);
     const auto traffic_up = cache.getTraffic(level);
 
-    csv << config_name << ',' << level << ',' << total  << ','
-        << misses << ',' << evictions << ',' << traffic_up << '\n';
+    csv << config_name << ',' << level << ',' << total << ',' << misses << ','
+        << evictions << ',' << traffic_up << '\n';
   }
 
   return csv.str();
@@ -470,13 +451,13 @@ std::string make_csv_lifetimes(const CacheHierarchy& cache,
 std::string make_csv_bundles_header() { return "config,pc,size,count"; }
 
 std::string make_csv_bundles(const CacheHierarchy& cache,
-                               const std::string& config_name) {
+                             const std::string& config_name) {
   std::ostringstream csv;
 
   const auto bundles = cache.getBundleOps();
   for (const auto& [pc, bundle] : bundles) {
-    csv << config_name << ",0x" << std::hex << pc << std::dec << ','
-        << bundle.total_ops << ',' << bundle.times_encountered << '\n';
+    csv << config_name << ",0x" << std::hex << pc << std::dec << ',' << bundle.total_ops
+        << ',' << bundle.times_encountered << '\n';
   }
 
   return csv.str();

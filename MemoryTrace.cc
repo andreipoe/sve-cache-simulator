@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstring>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -21,6 +22,27 @@ bool MemoryRequest::is_bundle() const { return bundle_kind != 0; }
 bool MemoryRequest::is_bundle_start() const { return bundle_kind & 0x1; }
 bool MemoryRequest::is_bundle_middle() const { return bundle_kind & 0x2; }
 bool MemoryRequest::is_bundle_end() const { return bundle_kind & 0x4; }
+
+
+namespace MemoryTraceTools {
+
+/* Guess if the given file is a text file */
+TraceFileType guess_file_type(const std::string& fname) {
+  std::ifstream f { fname };
+
+  if (!f.is_open()) throw std::invalid_argument("Cannot open trace file: " + fname);
+
+  size_t check_count { 500 };
+  std::unique_ptr<char> data { new char[check_count + 1] };
+  f.read(data.get(), check_count);
+
+  if (f.eof()) check_count = f.gcount();
+  if (std::memchr(data.get(), '\0', check_count) != NULL)
+    return TraceFileType::Binary;
+  else
+    return TraceFileType::Text;
+}
+}  // namespace MemoryTraceTools
 
 
 MemoryTrace::MemoryTrace(std::istream& tracefile, TraceFileType ftype) {
