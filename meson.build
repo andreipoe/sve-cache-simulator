@@ -15,6 +15,13 @@ if get_option('parallel')
   link_args += ['-fopenmp']
 endif
 
+# Fix Homebew LLVM build on Mac
+if build_machine.system() == 'darwin'
+  cpp_args  += ['-I/usr/local/opt/llvm/include']
+  link_args += ['-L/usr/local/opt/llvm/lib']
+  rpath = '/usr/local/opt/llvm/lib'
+endif
+
 build_type = get_option('buildtype')
 if build_type == 'release'
   cpp_args += ['-ffast-math']
@@ -31,13 +38,6 @@ if build_type == 'release'
     cpp_args += ['-ffp-contract=fast', '-fsimdmath']
   elif compiler == 'clang'
     cpp_args += ['-ffp-contract=fast']
-
-    # Fix Homebew LLVM build on Mac
-    if build_machine.system() == 'darwin'
-      cpp_args  += ['-I/usr/local/opt/llvm/include']
-      link_args += ['-L/usr/local/opt/llvm/lib']
-      rpath = '/usr/local/opt/llvm/lib'
-    endif
   endif
 elif build_type == 'debug' and cxx.get_id() == 'gcc'
   cpp_args  += ['-g3']
