@@ -1,6 +1,6 @@
 # SVE Cache Simulator
 
-[![pipeline status](https://gitlab.com/phd-repos/sve-cache-simulator/badges/master/pipeline.svg)](https://gitlab.com/phd-repos/sve-cache-simulator/-/commits/master)
+[![pipeline status](https://gitlab.com/andreipoe/sve-cache-simulator/badges/master/pipeline.svg)](https://gitlab.com/andreipoe/sve-cache-simulator/-/commits/master)
 
 
 ## Build
@@ -95,7 +95,7 @@ A tool is provided to convert from text to binary traces:
 ./convert-trace -h
 ```
 
-Reading binary traces is [about 5x faster](https://gitlab.com/phd-repos/sve-cache-simulator/-/issues/8#note_358269256) than parsing numbers from text.
+Reading binary traces is [about 5x faster](https://gitlab.com/andreipoe/cpp-parsing-benchmark) than parsing numbers from text.
 
 The same trace can be run through several configurations with a single invocation:
 
