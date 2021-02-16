@@ -64,7 +64,7 @@ endif
 LDFLAGS = $(LDFLAGS_$(COMPILER))
 
 TARGET := scs
-SRC := $(filter-out TraceConverterMain.cc, $(wildcard *.cc))
+SRC := $(filter-out TraceConverterMain.cc BundleStatsMain.cc, $(wildcard *.cc))
 OBJ := $(patsubst %.cc,%.o,$(SRC))
 # HDR := $(patsubst %.cc,%.hh,$(SRC))
 
@@ -72,17 +72,25 @@ CONVERTER_TARGET := convert-trace
 CONVERTER_SRC := MemoryTrace.cc TraceConverter.cc TraceConverterMain.cc
 CONVERTER_OBJ := $(patsubst %.cc,%.o,$(CONVERTER_SRC))
 
+BUNDLESTATS_TARGET := bundle-stats
+BUNDLESTATS_SRC := BundleStatsMain.cc MemoryTrace.cc
+BUNDLESTATS_OBJ := $(patsubst %.cc,%.o,$(BUNDLESTATS_SRC))
 
-.PHONY: all converter test clean
+.PHONY: all converter bundlestats test clean
 
-all: $(TARGET) converter
+all: $(TARGET) converter bundlestats
 
 converter: $(CONVERTER_TARGET)
+
+bundlestats: $(BUNDLESTATS_TARGET)
 
 $(TARGET): $(OBJ)
 	$(CXX) $(LDFLAGS) -o $@ $^
 
 $(CONVERTER_TARGET): $(CONVERTER_OBJ)
+	$(CXX) $(LDFLAGS) -o $@ $^
+
+$(BUNDLESTATS_TARGET): $(BUNDLESTATS_OBJ)
 	$(CXX) $(LDFLAGS) -o $@ $^
 
 test: $(OBJ)

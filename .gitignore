@@ -2,6 +2,7 @@
 *.gch
 scs
 convert-trace
+bundle-stats
 
 *.log
 
